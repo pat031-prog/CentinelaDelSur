@@ -7,141 +7,125 @@ interface AlertPanelProps {
   maxItems?: number
 }
 
-const LEVEL_COLORS: Record<AlertLevel, string> = {
-  green: 'var(--green)',
-  yellow: 'var(--yellow)',
-  orange: 'var(--orange)',
-  red: 'var(--red)',
-  black: 'var(--black-alert)',
-}
-
 export default function AlertPanel({ alerts, title = 'LIVE INTEL FEED', maxItems = 10 }: AlertPanelProps) {
   const displayed = alerts.slice(0, maxItems)
 
   return (
-    <div className="glass-panel" style={{
+    <div style={{
       height: '100%',
-      borderRadius: '8px',
       display: 'flex',
       flexDirection: 'column',
-      overflow: 'hidden'
+      background: 'white',
+      borderRadius: '16px',
+      border: '1px solid var(--border)',
+      overflow: 'hidden' // Important for rounded corners
     }}>
-      {/* Sticky Header */}
+      {/* Header */}
       <div style={{
         padding: '1rem 1.25rem',
         borderBottom: '1px solid var(--border)',
-        background: 'rgba(5, 9, 16, 0.6)',
-        backdropFilter: 'blur(10px)',
+        background: '#f8fafc',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10
       }}>
         <h3 style={{
           margin: 0,
           color: 'var(--text-secondary)',
-          fontSize: '0.85rem',
-          letterSpacing: '0.1em',
+          fontSize: '0.8rem',
+          fontWeight: 700,
+          letterSpacing: '0.05em',
           textTransform: 'uppercase',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.75rem'
+          gap: '0.5rem'
         }}>
           <span style={{
             display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%',
-            background: 'var(--red)', boxShadow: '0 0 6px var(--red)',
-            animation: 'blink 1.5s infinite'
+            background: 'var(--risk-high)',
+            animation: 'pulse 2s infinite'
           }} />
           {title}
         </h3>
         <span style={{
           fontFamily: 'JetBrains Mono',
           fontSize: '0.75rem',
-          color: 'var(--accent)',
-          background: 'var(--accent-glow)',
-          padding: '2px 6px',
-          borderRadius: '4px'
+          color: 'var(--text-secondary)',
+          background: '#e2e8f0',
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontWeight: 600
         }}>
           {alerts.length}
         </span>
       </div>
 
-      {/* Scrollable List */}
+      {/* List */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '1rem',
+        padding: '0',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem'
+        flexDirection: 'column'
       }}>
         {displayed.length === 0 ? (
           <div style={{
-            textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.85rem',
-            fontFamily: 'JetBrains Mono'
+            textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-secondary)', fontSize: '0.85rem'
           }}>
-            NO ACTIVE SIGNALS DETECTED
+            No active signals.
           </div>
         ) : (
-          displayed.map((alert, index) => {
-            const color = LEVEL_COLORS[alert.alert_level] || 'var(--text-muted)'
-            return (
-              <div key={alert.id} className="animate-fade-in-up" style={{
-                animationDelay: `${index * 50}ms`,
-                padding: '0.85rem',
-                background: 'rgba(255, 255, 255, 0.02)',
-                borderRadius: '6px',
-                border: '1px solid transparent',
-                borderLeft: `3px solid ${color}`,
-                transition: 'all 0.2s ease',
-                cursor: 'pointer'
-              }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)'
-                  e.currentTarget.style.transform = 'none'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                  <span style={{
-                    fontFamily: 'JetBrains Mono',
-                    fontSize: '0.7rem',
-                    color: 'var(--text-muted)'
-                  }}>
-                    {alert.country_code} • {new Date(alert.created_at).toLocaleDateString()}
-                  </span>
-                  <AlertBadge level={alert.alert_level} size="sm" showLabel={true} pulsing={false} />
-                </div>
-
-                <div style={{
-                  color: 'var(--text-primary)',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                  marginBottom: '0.25rem',
-                  lineHeight: '1.4'
-                }}>
-                  {alert.title}
-                </div>
-
-                <div style={{
+          displayed.map((alert, index) => (
+            <div key={alert.id} style={{
+              padding: '1rem 1.25rem',
+              borderBottom: '1px solid #f1f5f9',
+              transition: 'background 0.2s',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem'
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+              onMouseLeave={e => e.currentTarget.style.background = 'white'}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: '0.7rem',
                   color: 'var(--text-secondary)',
-                  fontSize: '0.75rem',
-                  lineHeight: '1.4',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
+                  fontWeight: 600
                 }}>
-                  {alert.description}
-                </div>
+                  {alert.country_code}
+                </span>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{new Date(alert.created_at).toLocaleDateString()}</span>
               </div>
-            )
-          })
+
+              <div style={{
+                color: 'var(--text-primary)',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                lineHeight: '1.4'
+              }}>
+                {alert.title}
+              </div>
+
+              <div style={{
+                color: 'var(--text-secondary)',
+                fontSize: '0.8rem',
+                lineHeight: '1.4',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}>
+                {alert.description}
+              </div>
+
+              <div style={{ marginTop: '0.5rem' }}>
+                <AlertBadge level={alert.alert_level} size="sm" showLabel={true} pulsing={false} />
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

@@ -12,29 +12,20 @@ interface DomainChartProps {
 }
 
 const LEVEL_COLORS: Record<AlertLevel, string> = {
-  green: '#10b981',
-  yellow: '#eab308',
-  orange: '#f97316',
-  red: '#ef4444',
-  black: '#a855f7',
-}
-
-const DOMAIN_ICONS: Record<string, string> = {
-  political: '⚡',
-  economic: '💰',
-  supply_chain: '📦',
-  geopolitical: '🌐',
-  climate: '🌪️',
-  technology: '🤖',
+  green: 'var(--risk-low)',
+  yellow: 'var(--risk-med)',
+  orange: 'var(--risk-med)',
+  red: 'var(--risk-high)',
+  black: 'var(--risk-black)',
 }
 
 const DOMAIN_LABELS: Record<string, string> = {
-  political: 'POLITICAL',
-  economic: 'ECONOMIC',
-  supply_chain: 'SUPPLY CHAIN',
-  geopolitical: 'GEOPOLITICAL',
-  climate: 'CLIMATE',
-  technology: 'TECHNOLOGY',
+  political: 'Political Stability',
+  economic: 'Economic Health',
+  supply_chain: 'Supply Chain',
+  geopolitical: 'Geopolitics',
+  climate: 'Climate Risk',
+  technology: 'Cyber/Tech',
 }
 
 export default function DomainChart({ data }: DomainChartProps) {
@@ -47,9 +38,9 @@ export default function DomainChart({ data }: DomainChartProps) {
   }, [])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {data.map((item, index) => {
-        const color = LEVEL_COLORS[item.level] || 'var(--text-muted)'
+        const color = LEVEL_COLORS[item.level] || 'var(--text-secondary)'
         const width = animated ? Math.min(100, item.score) : 0
 
         return (
@@ -60,17 +51,15 @@ export default function DomainChart({ data }: DomainChartProps) {
               justifyContent: 'space-between',
               marginBottom: '0.4rem',
               alignItems: 'center',
-              fontFamily: 'JetBrains Mono',
-              fontSize: '0.75rem',
+              fontSize: '0.85rem',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
-                <span style={{ opacity: 0.7 }}>{DOMAIN_ICONS[item.domain] || '•'}</span>
-                <span style={{ letterSpacing: '0.05em' }}>{DOMAIN_LABELS[item.domain] || item.domain.toUpperCase()}</span>
-              </div>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                {DOMAIN_LABELS[item.domain] || item.domain}
+              </span>
               <span style={{
                 color: color,
-                fontWeight: 600,
-                textShadow: `0 0 5px ${color}40`
+                fontWeight: 700,
+                fontFamily: 'JetBrains Mono'
               }}>
                 {item.score.toFixed(1)}
               </span>
@@ -79,9 +68,9 @@ export default function DomainChart({ data }: DomainChartProps) {
             {/* Bar Background */}
             <div style={{
               width: '100%',
-              height: '6px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '2px',
+              height: '8px',
+              backgroundColor: '#f1f5f9',
+              borderRadius: '4px',
               overflow: 'hidden',
               position: 'relative',
             }}>
@@ -90,22 +79,9 @@ export default function DomainChart({ data }: DomainChartProps) {
                 width: `${width}%`,
                 height: '100%',
                 backgroundColor: color,
-                boxShadow: `0 0 8px ${color}60`,
-                borderRadius: '2px',
+                borderRadius: '4px',
                 transition: `width 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${index * 100}ms`,
-                position: 'relative',
-              }}>
-                {/* Shine effect */}
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                  transform: 'skewX(-20deg)',
-                }} />
-              </div>
+              }} />
             </div>
           </div>
         )

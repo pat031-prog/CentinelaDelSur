@@ -1,19 +1,19 @@
 import { AlertLevel } from '../types'
 
 const LEVEL_COLORS: Record<AlertLevel, string> = {
-  green: 'var(--green)',
-  yellow: 'var(--yellow)',
-  orange: 'var(--orange)',
-  red: 'var(--red)',
-  black: 'var(--black-alert)',
+  green: 'var(--risk-low)',
+  yellow: 'var(--risk-med)',
+  orange: 'var(--risk-med)',
+  red: 'var(--risk-high)',
+  black: 'var(--risk-black)',
 }
 
 const LEVEL_LABELS: Record<AlertLevel, string> = {
-  green: 'ALL CLEAR',
-  yellow: 'WATCHLIST',
-  orange: 'ELEVATED',
-  red: 'CRITICAL',
-  black: 'COLLAPSE',
+  green: 'Stable',
+  yellow: 'Watch',
+  orange: 'Elevated',
+  red: 'Critical',
+  black: 'Collapse',
 }
 
 interface AlertBadgeProps {
@@ -25,31 +25,26 @@ interface AlertBadgeProps {
 }
 
 export default function AlertBadge({ level, size = 'md', showLabel = true, pulsing = true, className = '' }: AlertBadgeProps) {
-  const color = LEVEL_COLORS[level] || 'var(--text-muted)'
+  const color = LEVEL_COLORS[level] || 'var(--text-secondary)'
 
   const sizeMap = {
-    sm: { dot: '6px', font: '0.7rem', padding: '2px 6px' },
-    md: { dot: '8px', font: '0.8rem', padding: '4px 8px' },
-    lg: { dot: '10px', font: '0.9rem', padding: '6px 12px' },
+    sm: { dot: '6px', font: '0.7rem', padding: '2px 8px' },
+    md: { dot: '8px', font: '0.8rem', padding: '4px 10px' },
+    lg: { dot: '10px', font: '0.9rem', padding: '6px 14px' },
   }
 
   const currentSize = sizeMap[size || 'md']
-
-  // Only pulse for severe threats
-  const shouldPulse = pulsing && (level === 'red' || level === 'black')
-  const animationName = level === 'black' ? 'pulse-glow-black' : 'pulse-glow'
 
   return (
     <div className={className} style={{
       display: 'inline-flex',
       alignItems: 'center',
       gap: '0.5rem',
-      background: `rgba(0,0,0,0.2)`,
+      background: 'white',
       border: `1px solid ${color}`,
       padding: currentSize.padding,
-      borderRadius: '4px',
-      boxShadow: shouldPulse ? `0 0 8px ${color}20` : 'none',
-      transition: 'all 0.3s ease'
+      borderRadius: '20px', // Pill shape for modern look
+      transition: 'all 0.2s ease'
     }}>
       <span style={{
         width: currentSize.dot,
@@ -57,18 +52,15 @@ export default function AlertBadge({ level, size = 'md', showLabel = true, pulsi
         borderRadius: '50%',
         backgroundColor: color,
         display: 'inline-block',
-        boxShadow: `0 0 6px ${color}80`,
-        animation: shouldPulse ? `${animationName} 2s infinite` : 'none',
       }} />
 
       {showLabel && (
         <span style={{
-          color: color,
+          color: 'var(--text-primary)',
           fontWeight: 600,
-          fontFamily: 'JetBrains Mono',
+          fontFamily: 'Inter', // Switch to Inter for badge text legality
           fontSize: currentSize.font,
-          letterSpacing: '0.05em',
-          textShadow: `0 0 8px ${color}40`,
+          letterSpacing: '0.02em',
           textTransform: 'uppercase'
         }}>
           {LEVEL_LABELS[level]}

@@ -7,25 +7,20 @@ from openai import OpenAI
 from backend.utils.config import settings
 from backend.utils.logger import logger
 
-# ATALAYA system prompt
-SYSTEM_PROMPT = """You are ATALAYA, an advanced anticipatory intelligence system designed to detect early signals of systemic crises in Latin America and the Global South. You operate as a strategic watchtower that simultaneously monitors multiple critical domains: politics, economics, supply chains, geopolitics, security, climate, and technology.
+# ATALAYA System Prompt - Expert Level
+SYSTEM_PROMPT = """ERES ATALAYA, UN SISTEMA DE INTELIGENCIA ANTICIPATORIA DE ÉLITE.
+Tu función es actuar como un Analista de Riesgos Geopolíticos Senior (20+ años de experiencia en CIA/Stratfor/Oxford Analytica).
+Tu objetivo no es describir noticias, sino DETECTAR RUPTURAS SISTÉMICAS antes de que ocurran.
 
-Your function is not only to alert, but to anticipate inflection points where gradual changes accelerate toward systemic ruptures.
+PRINCIPIOS OPERATIVOS:
+1. PENSAMIENTO DE SEGUNDO ORDEN: No te quedes en el evento inmediato. Analiza las consecuencias de las consecuencias.
+2. ESTRUCTURALISMO: Todo evento es síntoma de una fricción estructural subyacente. Encuéntrala.
+3. CONCISIÓN BRUTAL: Usa lenguaje técnico, directo y sin "relleno". Estilo militar/ejecutivo.
+4. EVIDENCIA: Cada afirmación debe estar respaldada por un indicador o hecho verificable.
+5. NEUTRALIDAD FRÍA: No emitas juicios morales. Solo analiza dinámicas de poder y estabilidad.
 
-Key frameworks:
-- Complex Adaptive Systems: crises emerge from cascading failures across domains
-- Cascade Risk Theory: shocks in critical nodes propagate through the network
-- Structural Vulnerability Analysis: critical dependencies, single points of failure
-- Global South Geopolitics: US-China competition, BRICS+, resource nationalism
-
-Alert levels:
-- GREEN (0-30): Resilient institutions
-- YELLOW (30-50): Systemic tension
-- ORANGE (50-70): Pre-crisis, window closing
-- RED (70-85): Imminent crisis (30-60 days)
-- BLACK (>85): Collapse in progress
-
-Always be transparent about confidence levels, admit uncertainties, and avoid unnecessary alarmism while not downplaying real risks. Quantify whenever possible."""
+MANTRA: "El caos es predecible si entiendes la estructura."
+"""
 
 class BaseAnalyst(ABC):
     """Abstract base class for AI analysts."""
@@ -34,7 +29,7 @@ class BaseAnalyst(ABC):
         self.logger = logger.getChild(self.__class__.__name__)
 
     @abstractmethod
-    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 8000) -> str:
+    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
         pass
 
     async def generate_country_report(
@@ -51,25 +46,59 @@ class BaseAnalyst(ABC):
             country_code, country_name, risk_scores, indicators, events, historical_analogs
         )
         
-        prompt = f"""Generate a complete ATALAYA systemic risk report for {country_name} ({country_code}).
-
-Data context:
+        prompt = f"""Genera un INFORME DE INTELIGENCIA ESTRATÉGICA PROFUNDO para {country_name} ({country_code}).
+        
+DATOS DE CONTEXTO (CONFIDENCIAL):
 {context}
 
-Use the standard ATALAYA report format with all sections:
-1. Systemic Fragility Index (overall and per domain)
-2. Systemic Crisis Probability (30/60/90 days)
-3. Critical Signals Detected
-4. Interdependency Analysis
-5. Projected Scenarios (optimistic/base/pessimistic/collapse)
-6. Tipping Points
-7. Potential Risk Cascades
-8. Priority Indicators to Monitor
-9. Historical Comparison
-10. Window of Opportunity
-11. Confidence and Limitations"""
+ESTRUCTURA OBLIGATORIA DEL INFORME (Formato Markdown):
 
-        return await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=8000)
+# 1. RESUMEN EJECUTIVO (BLUF: Bottom Line Up Front)
+- Síntesis de 3 párrafos del estado actual.
+- Nivel de Alerta Global justificado.
+- Tesis central de riesgo (el "qué pasará").
+
+# 2. ÍNDICE DE FRAGILIDAD SISTÉMICA
+- Desglose técnico de por qué el score es {risk_scores.get('score', 'N/A')}.
+- Análisis de los dominios más críticos (Political, Economic, etc.).
+- ¿Qué subsistema está fallando?
+
+# 3. SEÑALES CRÍTICAS Y ALERTAS TEMPRANAS
+- Lista de eventos recientes que actúan como precursores de crisis.
+- Para cada señal: [Severidad] -> [Evento] -> [Implicación Estructural].
+
+# 4. ANÁLISIS DE INTERDEPENDENCIAS (Cross-Domain)
+- ¿Cómo impacta la economía en la estabilidad política?
+- ¿Cómo el clima afecta la cadena de suministro?
+- Mapeo de contagio entre sectores.
+
+# 5. ESCENARIOS PROYECTADOS (Próximos 90 días)
+- **Escenario Base (Probabilidad >50%)**: La trayectoria inercial.
+- **Escenario Pesimista (Riesgo de Cola)**: Si los mitigadores fallan.
+- **Escenario de Cisne Negro**: Evento de baja probabilidad pero impacto catastrófico.
+
+# 6. PUNTOS DE INFLEXIÓN (Tipping Points)
+- 3 eventos gatillo específicos que cambiarían la trayectoria del país.
+- Fechas o ventanas de tiempo estimadas.
+
+# 7. CASCADAS DE RIESGO
+- Diagrama narrativo de propagación: Evento A -> Provoca B -> Colapsa C.
+
+# 8. COMPARACIÓN HISTÓRICA
+- Analogía breve con una crisis pasada (ej: "Similar a Venezuela 2014" o "Argentina 2001") y qué lecciones aplican.
+
+# 9. VENTANA DE OPORTUNIDAD
+- ¿Cuánto tiempo queda para intervenir antes de una ruptura irreversible?
+
+# 10. RECOMENDACIONES ESTRATÉGICAS
+- 3-5 acciones concretas para mitigación de riesgo.
+
+# 11. CONFIANZA Y LIMITACIONES
+- Evaluación de la calidad de la data y puntos ciegos.
+
+IMPORTANTE: El tono debe ser SERIO, URGENTE y PROFESIONAL. Usa negritas para conceptos clave. NO uses introducciones genéricas como "A continuación presento el informe...". Entra directo al análisis."""
+
+        return await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=12000)
 
     async def identify_tipping_points(
         self,
@@ -78,20 +107,20 @@ Use the standard ATALAYA report format with all sections:
         current_state: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
         """Identify critical tipping points in the next 30-90 days."""
-        prompt = f"""Analyze the current state of {country_name} ({country_code}) and identify the 3-5 most critical tipping points in the next 30-90 days.
-
-Current state:
+        prompt = f"""Analiza el estado actual de {country_name} ({country_code}) e identifica los 3-5 PUNTOS DE INFLEXIÓN (Tipping Points) más críticos para los próximos 30-90 días.
+        
+Estado actual:
 {json.dumps(current_state, indent=2, default=str)}
 
-Respond in JSON format - an array of objects with this structure:
+Responde en formato JSON (array de objetos):
 {{
-  "event": "description of the event/decision",
+  "event": "Descripción técnica del evento gatillo",
   "probability": 0.XX,
-  "impact_if_occurs": "description of consequences",
-  "impact_if_not": "alternative trajectory",
-  "key_date": "YYYY-MM-DD or 'ongoing'",
-  "domain": "primary domain affected",
-  "actors": ["actor1", "actor2"],
+  "impact_if_occurs": "Consecuencias estructurales si ocurre",
+  "impact_if_not": "Trayectoria alternativa o status quo",
+  "key_date": "Fecha estimada (YYYY-MM-DD) o ventana crítica",
+  "domain": "Domino principal afectado",
+  "actors": ["Actor clave 1", "Actor clave 2"],
   "cascade_risk": "high/medium/low"
 }}"""
         
@@ -106,22 +135,22 @@ Respond in JSON format - an array of objects with this structure:
         time_horizon: int = 90,
     ) -> Dict[str, Any]:
         """Simulate crisis cascades from a trigger event."""
-        prompt = f"""Simulate the crisis cascades that could be triggered if this event occurs: "{trigger_event}"
+        prompt = f"""Simula una CASCADA DE CRISIS sistémica iniciada por este evento gatillo: "{trigger_event}"
 
-Country: {country_code}
-Initial state:
+País: {country_code}
+Estado inicial:
 {json.dumps(initial_state, indent=2, default=str)}
 
-Time horizon: {time_horizon} days
+Horizonte: {time_horizon} días
 
-Generate:
-1. Temporal sequence of events (day 1, 3, 7, 14, 30, 60, 90)
-2. Cross-domain propagation
-3. Affected actors
-4. Possible interruption points
-5. Probability of each branch
+Genera un análisis JSON estructurado:
+1. Secuencia temporal (Día 1, 3, 7, 30, 90)
+2. Propagación entre dominios (Político -> Económico -> Social)
+3. Actores desestabilizados
+4. Puntos de interrupción (donde se podría detener)
+5. Probabilidad de cada rama
 
-Respond in structured JSON format."""
+Formato JSON requerido."""
 
         response_text = await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=6000)
         return self._parse_json(response_text, return_dict=True)
@@ -130,22 +159,25 @@ Respond in structured JSON format."""
         self,
         current_situation: str,
         country_code: str,
+        country_name: str, # Added country_name parameter to signature effectively
     ) -> List[Dict[str, Any]]:
         """Find relevant historical precedents."""
-        prompt = f"""Analyze this current situation in {country_code}:
+        prompt = f"""Analiza la situación actual en {country_code}:
 {current_situation}
 
-Find the 3 most relevant historical precedents from Latin America or the Global South.
+Encuentra los 3 PRECEDENTES HISTÓRICOS más relevantes en Latinoamérica o el Sur Global.
+Busca patrones de colapso institucional, crisis de deuda o estallido social similares.
 
-For each precedent, specify:
-- country and year
-- brief description of the crisis
-- key similarities with current situation (percentage match)
-- important differences
-- outcome of the historical case
-- applicable lessons
+Para cada precedente, especifica en JSON:
+- country_year: "País Año" (ej: "Argentina 2001")
+- description: Breve descripción de la crisis
+- similarity_score: Porcentaje de similitud (0-100)
+- key_similarities: Lista de patrones idénticos
+- key_differences: Diferencias estructurales clave
+- outcome: Cómo terminó esa crisis (Colapso, reforma, golpe, etc.)
+- lesson: Lección estratégica aplicable hoy
 
-Respond in JSON array format."""
+Responde solo con el array JSON."""
 
         response_text = await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=4000)
         return self._parse_json(response_text)
@@ -155,16 +187,17 @@ Respond in JSON array format."""
         country_scores: Dict[str, Dict[str, Any]],
     ) -> str:
         """Generate a regional overview."""
-        prompt = f"""Run a regional scan of Latin America. Here are the current risk profiles:
-
+        prompt = f"""Ejecuta un ESCANEO DE INTELIGENCIA REGIONAL sobre Latinoamérica.
+        
+Perfiles de riesgo actuales:
 {json.dumps(country_scores, indent=2, default=str)}
 
-Generate:
-1. Top 5 countries by risk level with brief analysis
-2. Regional risk patterns and trends
-3. Cross-border contagion risks
-4. Key regional events in next 30 days
-5. Overall regional stability assessment"""
+Genera un informe estratégico en Markdown:
+1. TOP 5 Puntos Calientes (Hotspots) y por qué.
+2. Patrones de Riesgo Regional (¿Hay contagio? ¿Efecto dominó?).
+3. Vectores de Inestabilidad Transfronteriza (Migración, Crimen Org., Suministros).
+4. Eventos Clave a monitorear próximos 30 días.
+5. Evaluación de Estabilidad Hemisférica (Resumen ejecutivo)."""
 
         return await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=6000)
 

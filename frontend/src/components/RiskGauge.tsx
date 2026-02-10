@@ -9,16 +9,16 @@ interface RiskGaugeProps {
 }
 
 const LEVEL_COLORS: Record<AlertLevel, string> = {
-  green: 'var(--green)',
-  yellow: 'var(--yellow)',
-  orange: 'var(--orange)',
-  red: 'var(--red)',
-  black: 'var(--black-alert)',
+  green: 'var(--risk-low)',
+  yellow: 'var(--risk-med)',
+  orange: 'var(--risk-med)',
+  red: 'var(--risk-high)',
+  black: 'var(--risk-black)',
 }
 
 export default function RiskGauge({ score, level, label, size = 120 }: RiskGaugeProps) {
   const [animatedScore, setAnimatedScore] = useState(0)
-  const color = LEVEL_COLORS[level] || 'var(--text-muted)'
+  const color = LEVEL_COLORS[level] || 'var(--text-secondary)'
 
   // Calculate circumference
   const radius = size * 0.4
@@ -62,7 +62,8 @@ export default function RiskGauge({ score, level, label, size = 120 }: RiskGauge
           marginBottom: '0.5rem',
           fontFamily: 'JetBrains Mono',
           letterSpacing: '0.05em',
-          textTransform: 'uppercase'
+          textTransform: 'uppercase',
+          fontWeight: 600
         }}>
           {label}
         </div>
@@ -70,11 +71,11 @@ export default function RiskGauge({ score, level, label, size = 120 }: RiskGauge
 
       <div style={{ width: size, height: size, margin: '0 auto', position: 'relative' }}>
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          {/* Background circle */}
+          {/* Background circle - Darker for Light Mode */}
           <circle
             cx={size / 2} cy={size / 2} r={radius}
             fill="none"
-            stroke="rgba(255, 255, 255, 0.05)"
+            stroke="#e2e8f0"
             strokeWidth={strokeWidth}
           />
 
@@ -89,7 +90,6 @@ export default function RiskGauge({ score, level, label, size = 120 }: RiskGauge
             strokeLinecap="round"
             style={{
               transition: 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
-              filter: `drop-shadow(0 0 8px ${color}60)`
             }}
           />
         </svg>
@@ -106,21 +106,12 @@ export default function RiskGauge({ score, level, label, size = 120 }: RiskGauge
         }}>
           <div style={{
             fontSize: `${size * 0.25}px`,
-            fontWeight: 700,
+            fontWeight: 800,
             fontFamily: 'JetBrains Mono',
             color: 'var(--text-primary)',
             lineHeight: 1
           }}>
             {Math.round(animatedScore)}
-          </div>
-          <div style={{
-            fontSize: `${size * 0.1}px`,
-            color: color,
-            fontFamily: 'JetBrains Mono',
-            marginTop: '2px',
-            fontWeight: 600
-          }}>
-            /100
           </div>
         </div>
       </div>
