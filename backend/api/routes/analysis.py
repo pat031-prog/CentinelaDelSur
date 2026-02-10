@@ -99,26 +99,42 @@ async def generate_deep_analysis(
     except Exception as e:
         log.warning(f"News fetch skipped: {e}")
 
-    # Generate editorial report via AI
+    # ========================================================================
+    # 4-STAGE ATALAYA PIPELINE: Extraction → Analysis → Quantification → Synthesis
+    # ========================================================================
     ai_error = None
+    pipeline_result = None
     try:
-        from backend.intelligence.ai_analyst import get_analyst
-        analyst = get_analyst()
-        log.info(f"Using AI provider: {analyst.__class__.__name__} for {country_code}")
+        from backend.intelligence.pipeline import run_pipeline
+        log.info(f"[ATALAYA] Starting 4-stage pipeline for {country_code}")
         
-        report = await analyst.generate_country_report(
+        pipeline_result = await run_pipeline(
             country_code=country_code,
             country_name=info["name"],
-            risk_scores=risk,
-            indicators={},
-            events=[],
-            news_context=news_context if news_context else None,
+            domain_scores=domain_scores,
+            news_context=news_context,
         )
-        log.info(f"AI report generated successfully for {country_code} ({len(report)} chars)")
+        
+        report = pipeline_result["report_text"]
+        
+        # Override risk assessment with AI-refined scores if available
+        if pipeline_result.get("ai_domain_scores"):
+            risk = scorer.calculate_country_risk(
+                pipeline_result["ai_domain_scores"],
+                trend="stable",
+            )
+        
+        # Use AI-generated scenarios if available
+        if pipeline_result.get("ai_scenarios"):
+            scenarios = pipeline_result["ai_scenarios"]
+        
+        log.info(f"[ATALAYA] Pipeline complete for {country_code}: "
+                 f"score={pipeline_result['final_score']} ({pipeline_result['rating']}), "
+                 f"{pipeline_result['elapsed_seconds']}s")
     except Exception as e:
         import traceback
         ai_error = f"{type(e).__name__}: {str(e)}"
-        log.error(f"AI Analysis failed for {country_code}: {ai_error}")
+        log.error(f"AI Pipeline failed for {country_code}: {ai_error}")
         log.error(traceback.format_exc())
         
         domain_names = {
@@ -138,7 +154,7 @@ async def generate_deep_analysis(
             signals=signals,
         )
 
-    return {
+    result = {
         "country_code": country_code,
         "country_name": info["name"],
         "analysis_depth": request.depth,
@@ -150,6 +166,14 @@ async def generate_deep_analysis(
         "ai_powered": ai_error is None,
         "ai_error": ai_error,
     }
+    
+    # Add pipeline metadata if available
+    if pipeline_result:
+        result["pipeline_stages"] = pipeline_result.get("stages", [])
+        result["interaction_multiplier"] = pipeline_result.get("interaction_multiplier")
+        result["qa_result"] = pipeline_result.get("qa", {})
+    
+    return result
 
 
 @router.post("/scenarios/simulate")

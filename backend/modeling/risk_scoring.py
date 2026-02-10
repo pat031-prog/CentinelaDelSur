@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from backend.utils.logger import logger
+from backend.data.historical_crises import calculate_empirical_multiplier
 
 
 # Risk domain weights for composite scoring
@@ -8,9 +9,9 @@ DOMAIN_WEIGHTS = {
     "political": 0.20,
     "economic": 0.25,
     "supply_chain": 0.15,
-    "geopolitical": 0.15,
+    "geopolitical": 0.20,
     "climate": 0.10,
-    "technology": 0.15,
+    "technology": 0.10,
 }
 
 # Alert level thresholds
@@ -87,18 +88,8 @@ class RiskScorer:
 
         base_score = weighted_sum / total_weight if total_weight > 0 else 0
 
-        # Cross-domain interaction amplifier
-        # When multiple domains are elevated, systemic risk increases non-linearly
-        elevated_domains = sum(1 for s in domain_scores.values() if s > 50)
-        if elevated_domains >= 3:
-            interaction_multiplier = 1.0 + (elevated_domains - 2) * 0.1
-        else:
-            interaction_multiplier = 1.0
-
-        # Critical domain check: if any single domain is in "black", amplify
-        max_domain_score = max(domain_scores.values()) if domain_scores else 0
-        if max_domain_score >= 85:
-            interaction_multiplier *= 1.15
+        # Empirical interaction multiplier from historical crisis correlations
+        interaction_multiplier = calculate_empirical_multiplier(domain_scores)
 
         composite = min(100, base_score * interaction_multiplier)
 
