@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../services/api'
-import CountryCard from '../components/CountryCard'
+import AlertBadge from '../components/AlertBadge'
 import RiskGauge from '../components/RiskGauge'
 
 export default function RegionalView() {
@@ -10,10 +11,10 @@ export default function RegionalView() {
   useEffect(() => {
     async function load() {
       try {
-        const result = await api.getRegionalOverview()
-        setData(result)
+        const res = await api.getRegionalOverview()
+        setData(res)
       } catch (e) {
-        console.error('Failed to load regional data:', e)
+        console.error(e)
       } finally {
         setLoading(false)
       }
@@ -21,77 +22,138 @@ export default function RegionalView() {
     load()
   }, [])
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Scanning Region...</div>
-  if (!data) return <div className="p-8 text-center text-red-600">Region Data Unavailable</div>
+  if (loading) return <div style={{ padding: '3rem', color: 'var(--text-muted)' }}>Scanning region...</div>
+  if (!data) return <div style={{ padding: '3rem', color: 'var(--risk-red)' }}>Region unavailable</div>
 
-  const scoreToLevel = (score: number) => {
-    if (score >= 85) return 'black' as const
-    if (score >= 70) return 'red' as const
-    if (score >= 50) return 'orange' as const
-    if (score >= 30) return 'yellow' as const
+  const scoreToLevel = (s: number) => {
+    if (s >= 85) return 'black' as const
+    if (s >= 70) return 'red' as const
+    if (s >= 50) return 'orange' as const
+    if (s >= 30) return 'yellow' as const
     return 'green' as const
   }
 
+  const dist = data.risk_distribution || {}
+  const distColors: Record<string, string> = {
+    green: 'var(--risk-green)', yellow: 'var(--risk-yellow)',
+    orange: 'var(--risk-orange)', red: 'var(--risk-red)', black: 'var(--risk-black)',
+  }
+
   return (
-    <div className="animate-enter">
-      <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-          Regional Intelligence
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Real-time monitoring of {data.total_countries} sovereign entities
+    <div className="fade-in">
+      {/* Header */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ marginBottom: '0.5rem' }}>Regional Intelligence</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '600px', lineHeight: 1.6 }}>
+          Hemispheric scan of <strong>{data.total_countries}</strong> sovereign entities.
+          Average regional fragility index stands at <strong style={{
+            color: data.regional_risk_score >= 50 ? 'var(--risk-orange)' : 'var(--text-primary)'
+          }}>{data.regional_risk_score?.toFixed(1)}</strong>.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem', marginBottom: '3rem' }}>
-        <div className="bento-card" style={{ padding: '2rem', textAlign: 'center', justifyContent: 'center' }}>
-          <div className="bento-title" style={{ justifyContent: 'center' }}>THREAT INDEX</div>
+      {/* ===== TOP: GAUGE + DISTRIBUTION ===== */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '280px 1fr',
+        gap: '1.5rem',
+        marginBottom: '2.5rem',
+      }}>
+        <div className="card" style={{ padding: '1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div className="label" style={{ marginBottom: '1rem' }}>HEMISPHERE THREAT INDEX</div>
           <RiskGauge
-            score={data.regional_risk_score}
-            level={scoreToLevel(data.regional_risk_score)}
-            size={160}
+            score={data.regional_risk_score || 0}
+            level={scoreToLevel(data.regional_risk_score || 0)}
+            size={150}
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
-          {data.risk_distribution && Object.entries(data.risk_distribution).map(([level, count]: [string, any]) => {
-            const colors: any = { green: '#10b981', yellow: '#f59e0b', orange: '#f97316', red: '#dc2626', black: '#7c3aed' }
-            const color = colors[level]
-
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+          gap: '1rem',
+        }}>
+          {Object.entries(dist).map(([level, count]: [string, any]) => {
+            const colorMap: Record<string, string> = {
+              green: 'card--sage', yellow: 'card--cream', orange: 'card--salmon',
+              red: 'card--blush', black: 'card--lavender',
+            }
             return (
-              <div key={level} className="bento-card" style={{
+              <div key={level} className={`card ${colorMap[level] || ''}`} style={{
+                padding: '1.25rem',
                 textAlign: 'center',
-                justifyContent: 'center',
-                borderTop: `4px solid ${color}`
+                display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
               }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1, marginBottom: '0.5rem' }}>
-                  {count}
-                </div>
-                <div style={{ color: color, fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>
-                  {level}
-                </div>
+                <div className="stat-number" style={{ fontSize: '2rem' }}>{count}</div>
+                <div style={{
+                  fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
+                  letterSpacing: '0.08em', color: distColors[level] || 'var(--text-muted)',
+                  marginTop: '0.375rem',
+                }}>{level}</div>
               </div>
             )
           })}
         </div>
       </div>
 
-      <div className="bento-title">FULL REGIONAL MATRIX</div>
+      {/* ===== TOP 5 ===== */}
+      {data.top_5_at_risk?.length > 0 && (
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div className="label" style={{ marginBottom: '1rem' }}>TOP 5 – HIGHEST RISK</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            {data.top_5_at_risk.map((c: any, i: number) => (
+              <Link key={c.code} to={`/country/${c.code}`} style={{ textDecoration: 'none' }}>
+                <div className="card card--salmon" style={{
+                  padding: '1.25rem',
+                  borderLeft: `4px solid ${distColors[c.risk_level] || 'var(--border)'}`,
+                  cursor: 'pointer',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{c.name}</span>
+                    <span className="pill" style={{ fontSize: '0.65rem' }}>#{i + 1}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                    <span className="stat-number" style={{ fontSize: '1.75rem' }}>{c.risk_score?.toFixed(0)}</span>
+                    <AlertBadge level={c.risk_level} size="sm" showLabel={false} />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===== FULL MATRIX ===== */}
+      <div className="label" style={{ marginBottom: '1rem' }}>ALL ENTITIES</div>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-        gap: '1.25rem'
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: '1rem',
       }}>
-        {data.countries_by_risk?.map((country: any) => (
-          <CountryCard
-            key={country.code}
-            code={country.code}
-            name={country.name}
-            region={country.region}
-            riskScore={country.risk_score}
-            riskLevel={country.risk_level}
-            domainScores={country.domain_scores}
-          />
+        {data.countries_by_risk?.map((c: any) => (
+          <Link key={c.code} to={`/country/${c.code}`} style={{ textDecoration: 'none' }}>
+            <div className="card" style={{
+              padding: '1rem 1.25rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderLeft: `3px solid ${distColors[c.risk_level] || 'var(--border)'}`,
+              cursor: 'pointer',
+            }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '2px' }}>{c.name}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.code} · {c.region}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: 50, height: 5, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+                  <div style={{ width: `${c.risk_score}%`, height: '100%', background: distColors[c.risk_level], borderRadius: 3 }} />
+                </div>
+                <span style={{ fontWeight: 800, fontSize: '1rem', color: distColors[c.risk_level], minWidth: 28, textAlign: 'right' }}>
+                  {c.risk_score?.toFixed(0)}
+                </span>
+              </div>
+            </div>
+          </Link>
         ))}
       </div>
     </div>

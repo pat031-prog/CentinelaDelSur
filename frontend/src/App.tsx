@@ -5,169 +5,210 @@ import CountryView from './pages/CountryView'
 import RegionalView from './pages/RegionalView'
 
 function App() {
-  const [time, setTime] = useState(new Date())
   const location = useLocation()
 
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
+  const navItems = [
+    { to: '/', icon: '⊞', label: 'Dashboard' },
+    { to: '/regional', icon: '◉', label: 'Regional Scan' },
+  ]
 
-  const getPageTitle = () => {
-    const path = location.pathname
-    if (path === '/') return 'Mission Dashboard'
-    if (path === '/regional') return 'Regional Intelligence'
-    if (path.startsWith('/country/')) return 'Country Analysis'
-    return 'System Status'
-  }
+  const toolItems = [
+    { to: '#', icon: '⬡', label: 'Reports' },
+    { to: '#', icon: '⚙', label: 'Settings' },
+  ]
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
-      {/* Sidebar Navigation */}
-      <aside style={{
-        width: 'var(--sidebar-width)',
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      {/* ===== SIDEBAR ===== */}
+      <aside className="sidebar" style={{
+        width: 'var(--sidebar-w)',
         background: 'var(--bg-sidebar)',
         color: 'var(--text-on-dark)',
         display: 'flex',
         flexDirection: 'column',
-        padding: '1.5rem',
         position: 'fixed',
         top: 0,
-        bottom: 0,
         left: 0,
-        zIndex: 50
+        bottom: 0,
+        zIndex: 100,
+        borderRight: '1px solid rgba(255,255,255,0.06)',
       }}>
         {/* Brand */}
-        <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{
+          padding: '1.5rem 1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.625rem',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}>
           <div style={{
-            width: '36px', height: '36px',
-            background: 'white',
-            borderRadius: '8px',
+            width: 32, height: 32,
+            borderRadius: 8,
+            background: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--bg-sidebar)',
-            fontWeight: 800
-          }}>
-            A
-          </div>
+            fontSize: '0.875rem',
+            fontWeight: 800,
+            color: '#1a1a1a',
+          }}>◈</div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '1.25rem', letterSpacing: '-0.02em' }}>ATALAYA</div>
-            <div style={{ fontSize: '0.7rem', opacity: 0.6, fontFamily: 'JetBrains Mono' }}>SYS.V2.0</div>
+            <div style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.01em' }}>ATALAYA</div>
+            <div style={{ fontSize: '0.65rem', opacity: 0.4, letterSpacing: '0.08em' }}>INTELLIGENCE SYS</div>
           </div>
         </div>
 
-        {/* Nav Links */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-          <SidebarLink to="/" icon="⊞" label="Dashboard" active={location.pathname === '/'} />
-          <SidebarLink to="/regional" icon="🌐" label="Regional View" active={location.pathname === '/regional'} />
-          <div style={{ margin: '1rem 0', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-          <SidebarLink to="#" icon="📁" label="Reports" />
-          <SidebarLink to="#" icon="⚙️" label="Settings" />
-        </nav>
+        {/* General */}
+        <div style={{ padding: '1.25rem 0.75rem 0' }}>
+          <div style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.35, letterSpacing: '0.1em', padding: '0 0.5rem', marginBottom: '0.5rem' }}>GENERAL</div>
+          {navItems.map(item => (
+            <NavLink key={item.to} item={item} active={location.pathname === item.to} />
+          ))}
+        </div>
 
-        {/* Bottom User Profile */}
-        <div style={{
-          marginTop: 'auto',
-          padding: '1rem',
-          background: 'rgba(255,255,255,0.05)',
-          borderRadius: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#3b82f6' }} />
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Analyst</div>
-            <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>lvl.5 Clearance</div>
+        {/* Tools */}
+        <div style={{ padding: '1.25rem 0.75rem 0' }}>
+          <div style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.35, letterSpacing: '0.1em', padding: '0 0.5rem', marginBottom: '0.5rem' }}>TOOLS</div>
+          {toolItems.map(item => (
+            <NavLink key={item.label} item={item} active={false} />
+          ))}
+        </div>
+
+        {/* Bottom */}
+        <div style={{ marginTop: 'auto', padding: '1rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.625rem',
+            padding: '0.75rem',
+            borderRadius: 10,
+            background: 'rgba(255,255,255,0.04)',
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #C8D5A0, #E8B4A6)',
+            }} />
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Analyst</div>
+              <div style={{ fontSize: '0.6rem', opacity: 0.4 }}>Clearance L5</div>
+            </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main style={{
-        marginLeft: 'var(--sidebar-width)',
+      {/* ===== MAIN ===== */}
+      <main className="main-content" style={{
+        marginLeft: 'var(--sidebar-w)',
         flex: 1,
-        padding: '2rem',
-        maxWidth: '1600px',
-        width: '100%'
+        minHeight: '100vh',
       }}>
-        {/* Header */}
+        {/* Top Bar */}
         <header style={{
+          padding: '1.25rem 2rem',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '2.5rem',
-          height: 'var(--header-height)'
+          justifyContent: 'space-between',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-page)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
         }}>
-          <div>
-            <h1 style={{ fontSize: '1.75rem', color: 'var(--text-primary)' }}>
-              {getPageTitle()}
-            </h1>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--risk-low)' }} />
-              System Operational
-            </div>
+          {/* Search */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: '0.5rem 1rem',
+            width: '340px',
+          }}>
+            <span style={{ opacity: 0.4 }}>🔍</span>
+            <input
+              type="text"
+              placeholder="Search countries, reports..."
+              style={{
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+                fontSize: '0.875rem',
+                fontFamily: 'inherit',
+                color: 'var(--text-primary)',
+                width: '100%',
+              }}
+            />
           </div>
 
-          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-            {/* Search */}
-            <div style={{
-              background: 'white',
-              border: '1px solid var(--border)',
-              borderRadius: '8px',
-              padding: '0.5rem 1rem',
-              display: 'flex',
-              alignItems: 'center',
-              width: '300px',
-              color: 'var(--text-secondary)'
-            }}>
-              <span>🔍</span>
-              <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}>Search intelligence...</span>
-            </div>
+          {/* Filter tabs (like Intelly) */}
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {['All', 'Critical', 'Watchlist', 'Stable'].map((tab, i) => (
+              <button key={tab} className={i === 0 ? 'btn btn--primary' : 'pill'} style={{
+                ...(i === 0 ? { padding: '6px 14px', fontSize: '0.8rem' } : { cursor: 'pointer', fontSize: '0.8rem' }),
+              }}>
+                {tab}
+              </button>
+            ))}
+          </div>
 
-            {/* Clock */}
+          {/* Time + Notifications */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Clock />
             <div style={{
-              fontFamily: 'JetBrains Mono',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              background: 'var(--bg-sidebar)',
-              color: 'white',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '8px'
-            }}>
-              {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
+              width: 32, height: 32, borderRadius: '50%',
+              border: '1px solid var(--border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.85rem', cursor: 'pointer',
+            }}>🔔</div>
           </div>
         </header>
 
-        {/* Dynamic Content */}
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/country/:code" element={<CountryView />} />
-          <Route path="/regional" element={<RegionalView />} />
-        </Routes>
+        {/* Page Content */}
+        <div style={{ padding: '2rem' }}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/country/:code" element={<CountryView />} />
+            <Route path="/regional" element={<RegionalView />} />
+          </Routes>
+        </div>
       </main>
     </div>
   )
 }
 
-function SidebarLink({ to, icon, label, active = false }: any) {
+function NavLink({ item, active }: { item: { to: string; icon: string; label: string }; active: boolean }) {
   return (
-    <Link to={to} style={{
+    <Link to={item.to} style={{
       display: 'flex',
       alignItems: 'center',
-      gap: '0.75rem',
-      padding: '0.75rem 1rem',
-      borderRadius: '8px',
-      color: active ? 'var(--bg-sidebar)' : 'rgba(255,255,255,0.7)',
-      background: active ? 'white' : 'transparent',
-      textDecoration: 'none',
-      fontSize: '0.95rem',
-      fontWeight: 500,
-      transition: 'all 0.2s ease'
+      gap: '0.625rem',
+      padding: '0.625rem 0.75rem',
+      borderRadius: 8,
+      color: active ? '#1a1a1a' : 'rgba(255,255,255,0.6)',
+      background: active ? '#fff' : 'transparent',
+      fontWeight: active ? 600 : 400,
+      fontSize: '0.875rem',
+      marginBottom: '2px',
+      transition: 'all 0.15s ease',
     }}>
-      <span style={{ fontSize: '1.1rem' }}>{icon}</span>
-      {label}
+      <span style={{ fontSize: '1rem', width: 20, textAlign: 'center' }}>{item.icon}</span>
+      {item.label}
     </Link>
+  )
+}
+
+function Clock() {
+  const [time, setTime] = useState(new Date())
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <span style={{
+      fontSize: '0.8rem',
+      fontWeight: 600,
+      color: 'var(--text-secondary)',
+      letterSpacing: '0.02em',
+    }}>
+      {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+    </span>
   )
 }
 

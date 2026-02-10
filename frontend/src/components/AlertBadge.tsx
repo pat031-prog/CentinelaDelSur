@@ -1,14 +1,14 @@
 import { AlertLevel } from '../types'
 
-const LEVEL_COLORS: Record<AlertLevel, string> = {
-  green: 'var(--risk-low)',
-  yellow: 'var(--risk-med)',
-  orange: 'var(--risk-med)',
-  red: 'var(--risk-high)',
+const COLORS: Record<AlertLevel, string> = {
+  green: 'var(--risk-green)',
+  yellow: 'var(--risk-yellow)',
+  orange: 'var(--risk-orange)',
+  red: 'var(--risk-red)',
   black: 'var(--risk-black)',
 }
 
-const LEVEL_LABELS: Record<AlertLevel, string> = {
+const LABELS: Record<AlertLevel, string> = {
   green: 'Stable',
   yellow: 'Watch',
   orange: 'Elevated',
@@ -16,7 +16,7 @@ const LEVEL_LABELS: Record<AlertLevel, string> = {
   black: 'Collapse',
 }
 
-interface AlertBadgeProps {
+interface Props {
   level: AlertLevel
   size?: 'sm' | 'md' | 'lg'
   showLabel?: boolean
@@ -24,48 +24,27 @@ interface AlertBadgeProps {
   className?: string
 }
 
-export default function AlertBadge({ level, size = 'md', showLabel = true, pulsing = true, className = '' }: AlertBadgeProps) {
-  const color = LEVEL_COLORS[level] || 'var(--text-secondary)'
-
-  const sizeMap = {
-    sm: { dot: '6px', font: '0.7rem', padding: '2px 8px' },
-    md: { dot: '8px', font: '0.8rem', padding: '4px 10px' },
-    lg: { dot: '10px', font: '0.9rem', padding: '6px 14px' },
-  }
-
-  const currentSize = sizeMap[size || 'md']
+export default function AlertBadge({ level, size = 'md', showLabel = true }: Props) {
+  const color = COLORS[level] || 'var(--text-muted)'
+  const dotSize = size === 'sm' ? 6 : size === 'lg' ? 10 : 8
+  const fontSize = size === 'sm' ? '0.7rem' : size === 'lg' ? '0.85rem' : '0.75rem'
+  const pad = size === 'sm' ? '2px 8px' : size === 'lg' ? '5px 14px' : '3px 10px'
 
   return (
-    <div className={className} style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      background: 'white',
-      border: `1px solid ${color}`,
-      padding: currentSize.padding,
-      borderRadius: '20px', // Pill shape for modern look
-      transition: 'all 0.2s ease'
+    <span className="pill" style={{
+      borderColor: color,
+      padding: pad,
+      gap: '5px',
     }}>
       <span style={{
-        width: currentSize.dot,
-        height: currentSize.dot,
-        borderRadius: '50%',
-        backgroundColor: color,
-        display: 'inline-block',
+        width: dotSize, height: dotSize, borderRadius: '50%',
+        background: color, display: 'inline-block', flexShrink: 0,
       }} />
-
       {showLabel && (
-        <span style={{
-          color: 'var(--text-primary)',
-          fontWeight: 600,
-          fontFamily: 'Inter', // Switch to Inter for badge text legality
-          fontSize: currentSize.font,
-          letterSpacing: '0.02em',
-          textTransform: 'uppercase'
-        }}>
-          {LEVEL_LABELS[level]}
+        <span style={{ fontSize, fontWeight: 600, color: 'var(--text-primary)' }}>
+          {LABELS[level]}
         </span>
       )}
-    </div>
+    </span>
   )
 }
