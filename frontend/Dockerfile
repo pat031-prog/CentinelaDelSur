@@ -1,4 +1,5 @@
-FROM node:20-alpine
+# Build Stage
+FROM node:20-alpine as build
 
 WORKDIR /app
 
@@ -6,7 +7,24 @@ COPY package.json ./
 RUN npm install
 
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+# Production Stage
+FROM nginx:alpine
 
-CMD ["npm", "run", "dev", "--", "--host"]
+# Copy built assets from builder stage
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Add nginx config for React Router support
+RUN echo 'server { \
+    listen 80; \
+    location / { \
+        root /usr/share/nginx/html; \
+        index index.html index.htm; \
+        try_files $uri $uri/ /index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

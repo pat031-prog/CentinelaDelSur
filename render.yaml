@@ -1,0 +1,52 @@
+services:
+  # Backend Service
+  - type: web
+    name: atalaya-backend
+    runtime: docker
+    rootDir: .
+    dockerfile: Dockerfile
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: atalaya-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: atalaya-redis
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: NEWS_API_KEY
+        sync: false
+      - key: FRED_API_KEY
+        sync: false
+      - key: DEBUG
+        value: "false"
+
+  # Frontend Service
+  - type: web
+    name: atalaya-frontend
+    runtime: docker
+    rootDir: frontend
+    dockerfile: Dockerfile
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: atalaya-backend
+          envVar: RENDER_EXTERNAL_URL
+
+databases:
+  - name: atalaya-db
+    plan: free
+    databaseName: atalaya_db
+    user: atalaya
+
+services:
+  - type: redis
+    name: atalaya-redis
+    plan: free
+    ipAllowList: [] # Only internal access
