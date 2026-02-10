@@ -98,7 +98,7 @@ class RiskScorer:
             "level": self.score_to_level(composite),
             "base_score": round(base_score, 1),
             "interaction_multiplier": round(interaction_multiplier, 2),
-            "elevated_domains": elevated_domains,
+            "elevated_domains": sum(1 for s in domain_scores.values() if s > 50),
             "domains": {
                 domain: {
                     "score": round(score, 1),
