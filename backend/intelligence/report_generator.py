@@ -1,0 +1,151 @@
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from backend.modeling.risk_scoring import RiskScorer
+from backend.modeling.scenario_generator import ScenarioGenerator
+from backend.modeling.cascade_simulator import CascadeSimulator
+from backend.utils.logger import logger
+
+
+LEVEL_EMOJI = {
+    "green": "🟢",
+    "yellow": "🟡",
+    "orange": "🟠",
+    "red": "🔴",
+    "black": "⚫",
+}
+
+TREND_ARROW = {
+    "worsening": "↗ Worsening",
+    "stable": "→ Stable",
+    "improving": "↘ Improving",
+}
+
+
+class ReportGenerator:
+    """Generates formatted ATALAYA risk reports.
+
+    Combines data from risk scoring, scenario generation, and cascade
+    simulation into the standard report format.
+    """
+
+    def __init__(self):
+        self.scorer = RiskScorer()
+        self.scenario_gen = ScenarioGenerator()
+        self.cascade_sim = CascadeSimulator()
+        self.logger = logger.getChild("report_generator")
+
+    def generate_text_report(
+        self,
+        country_code: str,
+        country_name: str,
+        domain_scores: Dict[str, float],
+        trends: Dict[str, str],
+        signals: List[Dict[str, Any]],
+        indicators: Optional[List[Dict[str, Any]]] = None,
+    ) -> str:
+        """Generate a formatted text report in ATALAYA standard format."""
+
+        # Calculate composite risk
+        risk = self.scorer.calculate_country_risk(domain_scores,
+            trend=self._dominant_trend(trends))
+
+        # Generate scenarios
+        dominant_domain = max(domain_scores, key=domain_scores.get) if domain_scores else "political"
+        scenarios = self.scenario_gen.generate_scenarios(
+            country_code, dominant_domain, risk["score"], domain_scores
+        )
+
+        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+        level_emoji = LEVEL_EMOJI.get(risk["level"], "❓")
+
+        report = f"""
+╔══════════════════════════════════════════════════════════════════╗
+║ ATALAYA - SYSTEMIC RISK REPORT                                  ║
+║ Country/Region: {country_name} ({country_code})
+║ Date: {timestamp}
+║ Global Alert Level: {level_emoji} {risk['level'].upper()}
+╚══════════════════════════════════════════════════════════════════╝
+
+┌─ SYSTEMIC FRAGILITY INDEX (0-100) ─────────────────────────────┐
+│
+│ GENERAL: {risk['score']} - {self._interpret_score(risk['score'])}
+│
+│ BY DOMAIN:"""
+
+        for domain, info in risk.get("domains", {}).items():
+            emoji = LEVEL_EMOJI.get(info["level"], "❓")
+            trend = TREND_ARROW.get(trends.get(domain, "stable"), "→ Stable")
+            report += f"\n│ • {domain.replace('_', ' ').title():30s} {info['score']:5.1f} {emoji} {trend}"
+
+        report += f"""
+│
+└─────────────────────────────────────────────────────────────────┘
+
+┌─ SYSTEMIC CRISIS PROBABILITY ──────────────────────────────────┐
+│
+│ • 30 days:  {risk['crisis_probability']['30_days']['probability']*100:.1f}% ± {risk['crisis_probability']['30_days']['margin']*100:.1f}%
+│ • 60 days:  {risk['crisis_probability']['60_days']['probability']*100:.1f}% ± {risk['crisis_probability']['60_days']['margin']*100:.1f}%
+│ • 90 days:  {risk['crisis_probability']['90_days']['probability']*100:.1f}% ± {risk['crisis_probability']['90_days']['margin']*100:.1f}%
+│
+└─────────────────────────────────────────────────────────────────┘"""
+
+        # Critical signals
+        if signals:
+            report += "\n\n┌─ CRITICAL SIGNALS DETECTED ──────────────────────────────────────┐"
+            for signal in signals[:5]:
+                report += f"""
+│
+│ [{signal.get('domain', 'GENERAL').upper()}]: {signal.get('title', 'N/A')}
+│ ├─ Severity: {signal.get('severity', 'N/A')}
+│ └─ Trend: {TREND_ARROW.get(signal.get('trend', 'stable'), '→ Stable')}"""
+            report += "\n│\n└─────────────────────────────────────────────────────────────────┘"
+
+        # Scenarios
+        report += "\n\n┌─ PROJECTED SCENARIOS ────────────────────────────────────────────┐"
+        scenario_emoji = {"optimistic": "🟢", "base": "🟡", "pessimistic": "🔴", "collapse": "⚫"}
+        for scenario in scenarios:
+            emoji = scenario_emoji.get(scenario["scenario_type"], "❓")
+            report += f"""
+│
+│ {emoji} {scenario['scenario_type'].upper()} (Prob: {scenario['probability']*100:.0f}%)
+│ {scenario['description']}"""
+        report += "\n│\n└─────────────────────────────────────────────────────────────────┘"
+
+        # Priority indicators
+        if indicators:
+            report += "\n\n┌─ PRIORITY INDICATORS TO MONITOR ─────────────────────────────────┐"
+            for ind in indicators[:5]:
+                report += f"""
+│ • {ind.get('name', 'N/A')}: {ind.get('value', 'N/A')} {ind.get('unit', '')}
+│   └─ Threshold: {ind.get('threshold', 'N/A')} | Source: {ind.get('source', 'N/A')}"""
+            report += "\n│\n└─────────────────────────────────────────────────────────────────┘"
+
+        report += f"""
+
+╔══════════════════════════════════════════════════════════════════╗
+║ Generated by ATALAYA v{self._version()} at {timestamp}
+╚══════════════════════════════════════════════════════════════════╝"""
+
+        return report
+
+    def _interpret_score(self, score: float) -> str:
+        if score < 30:
+            return "Resilient institutions, low systemic risk"
+        elif score < 50:
+            return "Systemic tension, monitoring required"
+        elif score < 70:
+            return "Pre-crisis state, intervention window closing"
+        elif score < 85:
+            return "Imminent crisis, urgent action needed"
+        return "Systemic collapse in progress"
+
+    def _dominant_trend(self, trends: Dict[str, str]) -> str:
+        if not trends:
+            return "stable"
+        trend_counts = {}
+        for t in trends.values():
+            trend_counts[t] = trend_counts.get(t, 0) + 1
+        return max(trend_counts, key=trend_counts.get)
+
+    def _version(self) -> str:
+        return "0.1.0"
