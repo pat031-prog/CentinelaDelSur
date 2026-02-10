@@ -264,6 +264,24 @@ PROHIBIDO:
 - Falso optimismo: "La situación se normalizará pronto"
 - Repeticiones: NO repitas la misma idea con diferentes palabras (ej: "reservas en rojo" solo UNA vez)
 
+TEMPORAL CLARITY:
+- El reporte se escribe DESDE la fecha actual proporcionada
+- Los datos presentados son de los últimos 90 días (pasado reciente) — son ACTUALES, no futuros
+- Los escenarios proyectan los próximos 90 días (futuro)
+- NUNCA decir "naturaleza futura de los datos" — los datos son REALES y PRESENTES
+- Usar tiempo pasado para hechos ocurridos, presente para condiciones actuales, futuro solo para escenarios
+
+DATOS DUROS REQUERIDOS:
+Cada reporte DEBE incluir al menos 3 data points verificables:
+- Cifras económicas específicas (inflación %, reservas en USD, deuda/PIB)
+- Eventos políticos con fechas (protestas dd/mm, legislación, cambios de gabinete)
+- Métricas sociales cuantificadas (migración #, desempleo %, pobreza %)
+
+✅ "La inflación alcanzó 25.5% en enero 2026 [Fuente: INDEC]"
+✅ "Las reservas netas cayeron a USD 3.200M al cierre de enero [Fuente: BCRA]"
+❌ "La inflación es alta"
+❌ "Las reservas están bajas"
+
 FORMATO: Markdown completo, listo para renderizar.
 IDIOMA: Español latinoamericano, directo y profesional.
 """
