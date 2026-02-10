@@ -2,8 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api.routes import analysis, countries, domains, alerts
-from backend.api.models.database import init_db
-from backend.utils.cache import cache
+# from backend.api.models.database import init_db  # Disabled for Vercel deployment
+# from backend.utils.cache import cache  # Disabled for Vercel deployment
 from backend.utils.config import settings
 from backend.utils.logger import logger
 
@@ -13,23 +13,23 @@ async def lifespan(app: FastAPI):
     """Application lifecycle management."""
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
 
-    # Startup
-    try:
-        await init_db()
-        logger.info("Database initialized")
-    except Exception as e:
-        logger.warning(f"Database initialization skipped: {e}")
+    # Startup (DB and cache disabled for Vercel deployment)
+    # try:
+    #     await init_db()
+    #     logger.info("Database initialized")
+    # except Exception as e:
+    #     logger.warning(f"Database initialization skipped: {e}")
 
-    try:
-        await cache.connect()
-        logger.info("Redis cache connected")
-    except Exception as e:
-        logger.warning(f"Redis connection skipped: {e}")
+    # try:
+    #     await cache.connect()
+    #     logger.info("Redis cache connected")
+    # except Exception as e:
+    #     logger.warning(f"Redis connection skipped: {e}")
 
     yield
 
     # Shutdown
-    await cache.disconnect()
+    # await cache.disconnect()
     logger.info(f"{settings.app_name} shutting down")
 
 
