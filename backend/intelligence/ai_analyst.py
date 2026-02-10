@@ -301,7 +301,7 @@ class GeminiAnalyst(BaseAnalyst):
             raise ValueError("GEMINI_API_KEY not configured")
         
         genai.configure(api_key=settings.gemini_api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp') 
+        self.model = genai.GenerativeModel('gemini-2.0-flash') 
 
     async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
         try:

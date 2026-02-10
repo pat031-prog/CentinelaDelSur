@@ -3,37 +3,37 @@ from typing import Any, Dict, List, Optional
 from backend.utils.logger import logger
 
 
-# Scenario templates based on historical patterns
+# Plantillas de escenarios basadas en patrones históricos
 SCENARIO_TEMPLATES = {
     "economic_default": {
-        "optimistic": "Debt restructuring agreement reached with creditors. IMF program stabilizes economy.",
-        "base": "Partial default with selective payment. Extended negotiations with creditors. GDP contraction 3-5%.",
-        "pessimistic": "Full sovereign default. Capital controls. Banking system stress. GDP contraction >10%.",
-        "collapse": "Complete financial system collapse. Hyperinflation. Currency replacement. Social breakdown.",
+        "optimistic": "Acuerdo de reestructuración de deuda con acreedores. Programa del FMI estabiliza la economía. Retorno gradual a mercados internacionales.",
+        "base": "Default parcial con pagos selectivos. Negociaciones extendidas con acreedores. Contracción del PIB del 3-5%. Presión cambiaria sostenida.",
+        "pessimistic": "Default soberano total. Controles de capital. Estrés del sistema bancario. Contracción del PIB >10%. Fuga de inversión extranjera.",
+        "collapse": "Colapso total del sistema financiero. Hiperinflación. Reemplazo de moneda. Descomposición social y saqueos generalizados.",
     },
     "political_crisis": {
-        "optimistic": "Constitutional resolution. New elections scheduled. Institutional recovery.",
-        "base": "Prolonged political instability. Caretaker government. Economic uncertainty.",
-        "pessimistic": "Authoritarian consolidation. Democratic backsliding. International isolation.",
-        "collapse": "State failure. Institutional collapse. Mass migration. Regional contagion.",
+        "optimistic": "Resolución constitucional. Nuevas elecciones programadas. Recuperación institucional gradual y diálogo nacional.",
+        "base": "Inestabilidad política prolongada. Gobierno interino. Incertidumbre económica y parálisis legislativa.",
+        "pessimistic": "Consolidación autoritaria. Retroceso democrático. Aislamiento internacional y sanciones económicas.",
+        "collapse": "Fracaso estatal. Colapso institucional. Migración masiva. Contagio regional y posible intervención externa.",
     },
     "supply_chain_disruption": {
-        "optimistic": "Alternative routes activated. Temporary disruption (2-4 weeks). Minimal economic impact.",
-        "base": "Extended disruption (1-3 months). Inflation spike. Sector-specific shortages.",
-        "pessimistic": "Prolonged crisis (3-6 months). Critical shortages. Industrial slowdown.",
-        "collapse": "Systemic supply chain failure. Multiple chokepoints blocked. Rationing required.",
+        "optimistic": "Rutas alternativas activadas. Interrupción temporal (2-4 semanas). Impacto económico mínimo.",
+        "base": "Interrupción extendida (1-3 meses). Pico inflacionario. Escasez sectorial de insumos críticos.",
+        "pessimistic": "Crisis prolongada (3-6 meses). Escasez crítica de bienes esenciales. Desaceleración industrial severa.",
+        "collapse": "Fallo sistémico de cadena de suministro. Múltiples puntos de estrangulamiento bloqueados. Racionamiento obligatorio.",
     },
     "climate_disaster": {
-        "optimistic": "Rapid emergency response. International aid mobilized. Infrastructure rebuilt.",
-        "base": "Significant damage. Slow recovery. Agricultural losses. Displacement.",
-        "pessimistic": "Cascading failures. Infrastructure collapse. Food insecurity. Mass displacement.",
-        "collapse": "Permanent environmental regime change. Uninhabitable zones. Climate migration crisis.",
+        "optimistic": "Respuesta de emergencia rápida. Ayuda internacional movilizada. Infraestructura reconstruida en plazos razonables.",
+        "base": "Daños significativos. Recuperación lenta. Pérdidas agrícolas considerables. Desplazamiento poblacional moderado.",
+        "pessimistic": "Fallas en cascada. Colapso de infraestructura. Inseguridad alimentaria. Desplazamiento masivo de población.",
+        "collapse": "Cambio de régimen ambiental permanente. Zonas inhabitables. Crisis de migración climática a nivel regional.",
     },
     "social_unrest": {
-        "optimistic": "Government concessions. Dialogue process. Gradual de-escalation.",
-        "base": "Sustained protests. Economic disruption. Partial government response.",
-        "pessimistic": "Violent repression. International condemnation. Economic paralysis.",
-        "collapse": "Revolutionary situation. State violence. Civil conflict. Regional destabilization.",
+        "optimistic": "Concesiones gubernamentales. Proceso de diálogo. Desescalamiento gradual de tensiones.",
+        "base": "Protestas sostenidas. Disrupciones económicas. Respuesta gubernamental parcial e insuficiente.",
+        "pessimistic": "Represión violenta. Condena internacional. Parálisis económica y éxodo de capital.",
+        "collapse": "Situación revolucionaria. Violencia estatal. Conflicto civil. Desestabilización regional.",
     },
 }
 

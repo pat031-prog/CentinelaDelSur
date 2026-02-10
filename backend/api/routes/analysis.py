@@ -121,8 +121,13 @@ async def generate_deep_analysis(
         log.error(f"AI Analysis failed for {country_code}: {ai_error}")
         log.error(traceback.format_exc())
         
+        domain_names = {
+            "political": "Político", "economic": "Económico",
+            "supply_chain": "Cadena de Suministro", "geopolitical": "Geopolítico",
+            "climate": "Climático", "technology": "Tecnología",
+        }
         signals = [
-            {"domain": d, "title": f"Riesgo elevado en {d}", "severity": "high" if s > 60 else "medium", "trend": "worsening" if s > 50 else "stable"}
+            {"domain": d, "title": f"Riesgo elevado en {domain_names.get(d, d)}", "severity": "high" if s > 60 else "medium", "trend": "worsening" if s > 50 else "stable"}
             for d, s in domain_scores.items() if s > 40
         ]
         report = report_gen.generate_text_report(

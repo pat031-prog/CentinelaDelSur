@@ -96,7 +96,12 @@ Las proyecciones probabilísticas del sistema indican los siguientes niveles de 
 
 """
         for period, data in cp.items():
-            label = period.replace("_", " ")
+            period_labels = {
+                "30_days": "30 días",
+                "60_days": "60 días",
+                "90_days": "90 días",
+            }
+            label = period_labels.get(period, period.replace("_", " "))
             prob = data.get("probability", 0) * 100
             margin = data.get("margin", 0) * 100
             report += f"- **{label}**: {prob:.1f}% (±{margin:.1f}%)\n"
