@@ -1,10 +1,9 @@
 services:
-  # Backend Service
+  # Backend API (FastAPI + Python)
   - type: web
     name: atalaya-backend
     runtime: docker
-    rootDir: .
-    dockerfile: Dockerfile
+    dockerfilePath: ./Dockerfile
     plan: free
     envVars:
       - key: DATABASE_URL
@@ -13,7 +12,7 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: atalaya-redis
           property: connectionString
       - key: ANTHROPIC_API_KEY
@@ -25,12 +24,12 @@ services:
       - key: DEBUG
         value: "false"
 
-  # Frontend Service
+  # Frontend (React + Nginx)
   - type: web
     name: atalaya-frontend
     runtime: docker
     rootDir: frontend
-    dockerfile: Dockerfile
+    dockerfilePath: ./Dockerfile
     plan: free
     envVars:
       - key: VITE_API_URL
@@ -39,8 +38,8 @@ services:
           name: atalaya-backend
           envVarKey: RENDER_EXTERNAL_URL
 
-  # Redis Service
-  - type: redis
+  # Redis / Key Value Store
+  - type: keyvalue
     name: atalaya-redis
     plan: free
     ipAllowList: []
