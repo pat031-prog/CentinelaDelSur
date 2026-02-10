@@ -7,12 +7,60 @@ from backend.modeling.scenario_generator import ScenarioGenerator
 from backend.modeling.cascade_simulator import CascadeSimulator
 from backend.intelligence.report_generator import ReportGenerator
 from backend.api.routes.countries import LATAM_COUNTRIES, SAMPLE_SCORES
+import logging
 
 router = APIRouter()
 scorer = RiskScorer()
 scenario_gen = ScenarioGenerator()
 cascade_sim = CascadeSimulator()
 report_gen = ReportGenerator()
+log = logging.getLogger("analysis")
+
+
+async def _fetch_news_context(country_name: str, country_code: str) -> str:
+    """Fetch recent news headlines about a country for AI context."""
+    try:
+        import httpx
+        # Use eklipx Intelligence API or Google News RSS as source
+        sources = []
+        
+        # Try eklipx intelligence
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                resp = await client.get(
+                    f"https://intelligence.eklipx.io/api/articles",
+                    params={"q": country_name, "limit": 5}
+                )
+                if resp.status_code == 200:
+                    articles = resp.json()
+                    for art in articles[:5]:
+                        title = art.get("title", "")
+                        url = f"https://intelligence.eklipx.io/article/{art.get('id', '')}"
+                        sources.append(f"- {title} [Fuente: eklipX Intelligence] ({url})")
+        except Exception:
+            pass  # eklipx API may not be publicly available
+
+        # Google News RSS fallback
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                resp = await client.get(
+                    f"https://news.google.com/rss/search?q={country_name}+politica+economia&hl=es-419&gl=LATAM&ceid=US:es-419"
+                )
+                if resp.status_code == 200:
+                    import re
+                    titles = re.findall(r"<title>(.*?)</title>", resp.text)
+                    links = re.findall(r"<link>(.*?)</link>", resp.text)
+                    for title, link in zip(titles[2:7], links[2:7]):  # Skip RSS header items
+                        sources.append(f"- {title} [Fuente: Google News] ({link})")
+        except Exception:
+            pass
+
+        if sources:
+            return "\n".join(sources)
+        return ""
+    except Exception as e:
+        log.warning(f"News fetch failed: {e}")
+        return ""
 
 
 @router.post("/countries/{country_code}/analyze")
@@ -20,7 +68,7 @@ async def generate_deep_analysis(
     country_code: str,
     request: AnalysisRequest,
 ):
-    """Generate deep analysis for a country using all available models."""
+    """Generate editorial-style intelligence article for a country."""
     country_code = country_code.upper()
     if country_code not in LATAM_COUNTRIES:
         raise HTTPException(status_code=404, detail=f"Country {country_code} not found")
@@ -31,47 +79,41 @@ async def generate_deep_analysis(
         "geopolitical": 25, "climate": 30, "technology": 20,
     })
 
-    # Filter by requested domains
     if request.domains:
         domain_scores = {
             d: s for d, s in domain_scores.items()
             if d in [dom.value for dom in request.domains]
         }
 
-    # Calculate risk
     risk = scorer.calculate_country_risk(domain_scores)
 
-    # Generate scenarios
     dominant_domain = max(domain_scores, key=domain_scores.get) if domain_scores else "political"
     scenarios = scenario_gen.generate_scenarios(
         country_code, dominant_domain, risk["score"], domain_scores
     )
 
-    # Generate text report
-    signals = [
-        {"domain": d, "title": f"Elevated risk in {d}", "severity": "high" if s > 60 else "medium", "trend": "worsening" if s > 50 else "stable"}
-        for d, s in domain_scores.items() if s > 40
-    ]
+    # Fetch real-time news context
+    news_context = await _fetch_news_context(info["name"], country_code)
 
-    # Try to use AI Analyst for deep report
+    # Generate editorial report via AI
     try:
         from backend.intelligence.ai_analyst import get_analyst
         analyst = get_analyst()
-        
-        # Determine events (mock for now, should come from DB)
-        events = []
-        indicators = []
         
         report = await analyst.generate_country_report(
             country_code=country_code,
             country_name=info["name"],
             risk_scores=risk,
-            indicators={}, # Populate with real data eventually
-            events=events
+            indicators={},
+            events=[],
+            news_context=news_context if news_context else None,
         )
     except Exception as e:
-        # Fallback to template report if AI fails or not configured
-        print(f"AI Analysis failed: {e}")
+        log.error(f"AI Analysis failed: {e}")
+        signals = [
+            {"domain": d, "title": f"Riesgo elevado en {d}", "severity": "high" if s > 60 else "medium", "trend": "worsening" if s > 50 else "stable"}
+            for d, s in domain_scores.items() if s > 40
+        ]
         report = report_gen.generate_text_report(
             country_code=country_code,
             country_name=info["name"],
@@ -88,6 +130,7 @@ async def generate_deep_analysis(
         "risk_assessment": risk,
         "scenarios": scenarios,
         "report_text": report,
+        "sources_used": bool(news_context),
     }
 
 

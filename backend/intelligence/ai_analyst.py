@@ -7,19 +7,26 @@ from openai import OpenAI
 from backend.utils.config import settings
 from backend.utils.logger import logger
 
-# ATALAYA System Prompt - Expert Level
-SYSTEM_PROMPT = """ERES ATALAYA, UN SISTEMA DE INTELIGENCIA ANTICIPATORIA DE ÉLITE.
-Tu función es actuar como un Analista de Riesgos Geopolíticos Senior (20+ años de experiencia en CIA/Stratfor/Oxford Analytica).
-Tu objetivo no es describir noticias, sino DETECTAR RUPTURAS SISTÉMICAS antes de que ocurran.
+# ATALAYA System Prompt - Magazine/Editorial Style
+SYSTEM_PROMPT = """Eres ATALAYA, una plataforma de inteligencia geopolítica especializada en América Latina.
+Tu rol es el de un equipo editorial de análisis estratégico — piensa en The Economist, Foreign Affairs, o eklipX Intelligence, pero enfocado exclusivamente en riesgo soberano latinoamericano.
 
-PRINCIPIOS OPERATIVOS:
-1. PENSAMIENTO DE SEGUNDO ORDEN: No te quedes en el evento inmediato. Analiza las consecuencias de las consecuencias.
-2. ESTRUCTURALISMO: Todo evento es síntoma de una fricción estructural subyacente. Encuéntrala.
-3. CONCISIÓN BRUTAL: Usa lenguaje técnico, directo y sin "relleno". Estilo militar/ejecutivo.
-4. EVIDENCIA: Cada afirmación debe estar respaldada por un indicador o hecho verificable.
-5. NEUTRALIDAD FRÍA: No emitas juicios morales. Solo analiza dinámicas de poder y estabilidad.
+ESTILO DE ESCRITURA:
+- Escribe como un ARTÍCULO DE REVISTA de inteligencia: párrafos completos, narrativa fluida, análisis profundo.
+- NO uses formato de lista/bullet points como estructura principal. Usa PROSA EDITORIAL.
+- Cada sección debe tener al menos 2-3 párrafos sustanciales.
+- Usa subtítulos editoriales atractivos (no genéricos como "Sección 1").
+- Incluye datos específicos, cifras, porcentajes y nombres de actores clave.
+- Cita fuentes cuando sea posible: [Fuente: Reuters, Feb 2026] o similar.
+- Tono: Profesional, analítico, accesible pero nunca simplista. Como un artículo que leerías en una revista especializada.
+- Idioma: ESPAÑOL LATINOAMERICANO (no español peninsular).
 
-MANTRA: "El caos es predecible si entiendes la estructura."
+PRINCIPIOS EDITORIALES:
+1. CONTEXTO PRIMERO: Antes de analizar, contextualiza. El lector necesita entender el panorama.
+2. NARRATIVA: Los datos solos no cuentan la historia. Construye una narrativa clara.
+3. PROFUNDIDAD: No te quedes en la superficie. Explica el "por qué" detrás de cada tendencia.
+4. PROSPECTIVA: Siempre mira hacia adelante. ¿Qué viene? ¿Qué vigilar?
+5. FUENTES: Menciona medios, instituciones, y reportes como base de tus afirmaciones.
 """
 
 class BaseAnalyst(ABC):
@@ -40,63 +47,90 @@ class BaseAnalyst(ABC):
         indicators: Dict[str, Any],
         events: List[Dict[str, Any]],
         historical_analogs: Optional[List[Dict]] = None,
+        news_context: Optional[str] = None,
     ) -> str:
-        """Generate a comprehensive systemic risk report for a country."""
+        """Generate a magazine-style intelligence article for a country."""
         context = self._build_context(
             country_code, country_name, risk_scores, indicators, events, historical_analogs
         )
         
-        prompt = f"""Genera un INFORME DE INTELIGENCIA ESTRATÉGICA PROFUNDO para {country_name} ({country_code}).
+        news_section = ""
+        if news_context:
+            news_section = f"""
+NOTICIAS RECIENTES (usar como base para el artículo, citar las fuentes):
+{news_context}
+"""
         
-DATOS DE CONTEXTO (CONFIDENCIAL):
+        prompt = f"""Escribe un ARTÍCULO DE INTELIGENCIA EDITORIAL completo sobre {country_name} ({country_code}).
+        
+DATOS ANALÍTICOS:
 {context}
+{news_section}
 
-ESTRUCTURA OBLIGATORIA DEL INFORME (Formato Markdown):
+ESTRUCTURA DEL ARTÍCULO (en Markdown):
 
-# 1. RESUMEN EJECUTIVO (BLUF: Bottom Line Up Front)
-- Síntesis de 3 párrafos del estado actual.
-- Nivel de Alerta Global justificado.
-- Tesis central de riesgo (el "qué pasará").
+# {country_name}: [Titular editorial impactante que capture la situación actual]
 
-# 2. ÍNDICE DE FRAGILIDAD SISTÉMICA
-- Desglose técnico de por qué el score es {risk_scores.get('score', 'N/A')}.
-- Análisis de los dominios más críticos (Political, Economic, etc.).
-- ¿Qué subsistema está fallando?
+*Por ATALAYA Intelligence | {self._get_date()} | Análisis de Riesgo Soberano*
 
-# 3. SEÑALES CRÍTICAS Y ALERTAS TEMPRANAS
-- Lista de eventos recientes que actúan como precursores de crisis.
-- Para cada señal: [Severidad] -> [Evento] -> [Implicación Estructural].
+## Resumen Ejecutivo
 
-# 4. ANÁLISIS DE INTERDEPENDENCIAS (Cross-Domain)
-- ¿Cómo impacta la economía en la estabilidad política?
-- ¿Cómo el clima afecta la cadena de suministro?
-- Mapeo de contagio entre sectores.
+[3-4 párrafos que sinteticen la situación actual, el nivel de riesgo, y la tesis central. 
+Debe leerse como la entrada de un artículo de The Economist — enganchando al lector con 
+la urgencia y relevancia del tema.]
 
-# 5. ESCENARIOS PROYECTADOS (Próximos 90 días)
-- **Escenario Base (Probabilidad >50%)**: La trayectoria inercial.
-- **Escenario Pesimista (Riesgo de Cola)**: Si los mitigadores fallan.
-- **Escenario de Cisne Negro**: Evento de baja probabilidad pero impacto catastrófico.
+## El Panorama Actual
 
-# 6. PUNTOS DE INFLEXIÓN (Tipping Points)
-- 3 eventos gatillo específicos que cambiarían la trayectoria del país.
-- Fechas o ventanas de tiempo estimadas.
+[Descripción detallada del contexto político, económico y social actual. 
+Menciona actores clave (presidentes, ministros, líderes de oposición), 
+cifras económicas (inflación, PIB, deuda), y eventos recientes.
+Mínimo 3-4 párrafos sustanciales. Cita fuentes.]
 
-# 7. CASCADAS DE RIESGO
-- Diagrama narrativo de propagación: Evento A -> Provoca B -> Colapsa C.
+## Anatomía del Riesgo
 
-# 8. COMPARACIÓN HISTÓRICA
-- Analogía breve con una crisis pasada (ej: "Similar a Venezuela 2014" o "Argentina 2001") y qué lecciones aplican.
+[Análisis técnico profundo del Índice de Fragilidad. Explica qué dominios están 
+más comprometidos y por qué. Usa los datos de risk_scores para fundamentar.
+Conecta los dominios entre sí: cómo la crisis política alimenta la económica, etc.]
 
-# 9. VENTANA DE OPORTUNIDAD
-- ¿Cuánto tiempo queda para intervenir antes de una ruptura irreversible?
+## Señales de Alerta
 
-# 10. RECOMENDACIONES ESTRATÉGICAS
-- 3-5 acciones concretas para mitigación de riesgo.
+[¿Qué indicadores tempranos están encendiéndose? Describe eventos específicos 
+recientes que actúan como precursores. Para cada señal, explica su significado 
+estructural — no solo qué pasó, sino qué implica para el futuro.]
 
-# 11. CONFIANZA Y LIMITACIONES
-- Evaluación de la calidad de la data y puntos ciegos.
+## Escenarios a 90 Días
 
-IMPORTANTE: El tono debe ser SERIO, URGENTE y PROFESIONAL. Usa negritas para conceptos clave. NO uses introducciones genéricas como "A continuación presento el informe...". Entra directo al análisis."""
+### Escenario Base: [Nombre descriptivo]
+[2-3 párrafos describiendo la trayectoria más probable]
+
+### Escenario de Riesgo: [Nombre descriptivo]  
+[2-3 párrafos describiendo qué pasa si los factores de riesgo se materializan]
+
+### Cisne Negro: [Nombre descriptivo]
+[1-2 párrafos sobre el evento improbable pero catastrófico]
+
+## Precedentes Históricos
+
+[Comparación con crisis pasadas en la región. ¿Qué patrones se repiten? 
+¿Qué lecciones aplican? Sé específico con fechas y resultados.]
+
+## Recomendaciones para Observadores
+
+[Para analistas, inversores, y tomadores de decisiones: ¿qué vigilar? 
+¿Qué acciones tomar? ¿Cuáles son las fechas clave próximas?]
+
+---
+
+*Las opiniones expresadas representan el análisis de ATALAYA Intelligence y no constituyen asesoramiento financiero o político. Fuentes consultadas incluyen reportes de organismos internacionales, medios especializados y bases de datos propietarias.*
+
+REGLAS:
+- El artículo debe ser LARGO y SUSTANCIAL (mínimo 2000 palabras).
+- Cada sección debe tener PÁRRAFOS COMPLETOS, no listas.
+- Incluye cifras, datos y nombres específicos.
+- Cita fuentes entre corchetes: [Fuente: nombre, fecha].
+- El titular debe ser periodístico y provocador.
+- USA ESPAÑOL LATINOAMERICANO.
+- NO empieces con "A continuación..." o "En este informe...". Entra DIRECTO al contenido."""
 
         return await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=12000)
 
@@ -107,20 +141,20 @@ IMPORTANTE: El tono debe ser SERIO, URGENTE y PROFESIONAL. Usa negritas para con
         current_state: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
         """Identify critical tipping points in the next 30-90 days."""
-        prompt = f"""Analiza el estado actual de {country_name} ({country_code}) e identifica los 3-5 PUNTOS DE INFLEXIÓN (Tipping Points) más críticos para los próximos 30-90 días.
+        prompt = f"""Analiza el estado actual de {country_name} ({country_code}) e identifica los 3-5 PUNTOS DE INFLEXIÓN más críticos para los próximos 30-90 días.
         
 Estado actual:
 {json.dumps(current_state, indent=2, default=str)}
 
 Responde en formato JSON (array de objetos):
 {{
-  "event": "Descripción técnica del evento gatillo",
+  "event": "Descripción del evento gatillo",
   "probability": 0.XX,
-  "impact_if_occurs": "Consecuencias estructurales si ocurre",
-  "impact_if_not": "Trayectoria alternativa o status quo",
-  "key_date": "Fecha estimada (YYYY-MM-DD) o ventana crítica",
-  "domain": "Domino principal afectado",
-  "actors": ["Actor clave 1", "Actor clave 2"],
+  "impact_if_occurs": "Consecuencias si ocurre",
+  "impact_if_not": "Trayectoria alternativa",
+  "key_date": "Fecha estimada (YYYY-MM-DD)",
+  "domain": "Dominio afectado",
+  "actors": ["Actor 1", "Actor 2"],
   "cascade_risk": "high/medium/low"
 }}"""
         
@@ -135,22 +169,15 @@ Responde en formato JSON (array de objetos):
         time_horizon: int = 90,
     ) -> Dict[str, Any]:
         """Simulate crisis cascades from a trigger event."""
-        prompt = f"""Simula una CASCADA DE CRISIS sistémica iniciada por este evento gatillo: "{trigger_event}"
+        prompt = f"""Simula una CASCADA DE CRISIS iniciada por: "{trigger_event}"
 
 País: {country_code}
 Estado inicial:
 {json.dumps(initial_state, indent=2, default=str)}
-
 Horizonte: {time_horizon} días
 
-Genera un análisis JSON estructurado:
-1. Secuencia temporal (Día 1, 3, 7, 30, 90)
-2. Propagación entre dominios (Político -> Económico -> Social)
-3. Actores desestabilizados
-4. Puntos de interrupción (donde se podría detener)
-5. Probabilidad de cada rama
-
-Formato JSON requerido."""
+Genera un análisis JSON con secuencia temporal, propagación entre dominios, 
+actores afectados, puntos de interrupción y probabilidades."""
 
         response_text = await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=6000)
         return self._parse_json(response_text, return_dict=True)
@@ -159,23 +186,22 @@ Formato JSON requerido."""
         self,
         current_situation: str,
         country_code: str,
-        country_name: str, # Added country_name parameter to signature effectively
+        country_name: str = "",
     ) -> List[Dict[str, Any]]:
         """Find relevant historical precedents."""
         prompt = f"""Analiza la situación actual en {country_code}:
 {current_situation}
 
-Encuentra los 3 PRECEDENTES HISTÓRICOS más relevantes en Latinoamérica o el Sur Global.
-Busca patrones de colapso institucional, crisis de deuda o estallido social similares.
+Encuentra los 3 PRECEDENTES HISTÓRICOS más relevantes en Latinoamérica.
 
-Para cada precedente, especifica en JSON:
-- country_year: "País Año" (ej: "Argentina 2001")
-- description: Breve descripción de la crisis
+Para cada precedente, responde en JSON:
+- country_year: "País Año"
+- description: Descripción de la crisis
 - similarity_score: Porcentaje de similitud (0-100)
-- key_similarities: Lista de patrones idénticos
-- key_differences: Diferencias estructurales clave
-- outcome: Cómo terminó esa crisis (Colapso, reforma, golpe, etc.)
-- lesson: Lección estratégica aplicable hoy
+- key_similarities: Lista de patrones similares
+- key_differences: Diferencias clave
+- outcome: Resultado final
+- lesson: Lección aplicable hoy
 
 Responde solo con el array JSON."""
 
@@ -186,20 +212,36 @@ Responde solo con el array JSON."""
         self,
         country_scores: Dict[str, Dict[str, Any]],
     ) -> str:
-        """Generate a regional overview."""
-        prompt = f"""Ejecuta un ESCANEO DE INTELIGENCIA REGIONAL sobre Latinoamérica.
+        """Generate a regional editorial overview."""
+        prompt = f"""Escribe un ARTÍCULO EDITORIAL DE INTELIGENCIA REGIONAL sobre Latinoamérica.
         
 Perfiles de riesgo actuales:
 {json.dumps(country_scores, indent=2, default=str)}
 
-Genera un informe estratégico en Markdown:
-1. TOP 5 Puntos Calientes (Hotspots) y por qué.
-2. Patrones de Riesgo Regional (¿Hay contagio? ¿Efecto dominó?).
-3. Vectores de Inestabilidad Transfronteriza (Migración, Crimen Org., Suministros).
-4. Eventos Clave a monitorear próximos 30 días.
-5. Evaluación de Estabilidad Hemisférica (Resumen ejecutivo)."""
+Estructura del artículo (Markdown, prosa editorial, en español):
 
-        return await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=6000)
+# Radar Hemisférico: [Titular sobre la situación regional]
+
+*Por ATALAYA Intelligence | Análisis Regional*
+
+## Panorama General
+[Contexto regional en 2-3 párrafos]
+
+## Focos de Tensión
+[Top 5 países más críticos con análisis de cada uno]
+
+## Dinámicas Transfronterizas
+[Migración, crimen organizado, contagio económico, cadenas de suministro]
+
+## Perspectiva a 30 Días
+[Eventos a monitorear y proyecciones]
+
+## Evaluación de Estabilidad Hemisférica
+[Conclusión editorial]
+
+Mínimo 1500 palabras. Prosa editorial, no listas."""
+
+        return await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=8000)
 
     def _build_context(
         self,
@@ -212,26 +254,33 @@ Genera un informe estratégico en Markdown:
     ) -> str:
         """Build structured context for analysis."""
         context_parts = [
-            f"COUNTRY: {country_name} ({country_code})",
-            f"\nRISK SCORES:\n{json.dumps(risk_scores, indent=2, default=str)}",
-            f"\nKEY INDICATORS:\n{json.dumps(indicators, indent=2, default=str)}",
+            f"PAÍS: {country_name} ({country_code})",
+            f"\nÍNDICES DE RIESGO:\n{json.dumps(risk_scores, indent=2, default=str)}",
+            f"\nINDICADORES CLAVE:\n{json.dumps(indicators, indent=2, default=str)}",
         ]
 
         if events:
             context_parts.append(
-                f"\nRECENT EVENTS (last 7 days):\n{json.dumps(events[:20], indent=2, default=str)}"
+                f"\nEVENTOS RECIENTES:\n{json.dumps(events[:20], indent=2, default=str)}"
             )
 
         if analogs:
             context_parts.append(
-                f"\nHISTORICAL ANALOGS:\n{json.dumps(analogs, indent=2, default=str)}"
+                f"\nANÁLOGOS HISTÓRICOS:\n{json.dumps(analogs, indent=2, default=str)}"
             )
 
         return "\n".join(context_parts)
 
+    def _get_date(self) -> str:
+        """Get current date string."""
+        from datetime import datetime
+        months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+        now = datetime.now()
+        return f"{now.day} de {months[now.month - 1]} {now.year}"
+
     def _parse_json(self, text: str, return_dict: bool = False) -> Any:
         try:
-            # Clean up potential markdown code blocks
             if "```json" in text:
                 text = text.split("```json")[1].split("```")[0]
             elif "```" in text:
@@ -252,13 +301,10 @@ class GeminiAnalyst(BaseAnalyst):
             raise ValueError("GEMINI_API_KEY not configured")
         
         genai.configure(api_key=settings.gemini_api_key)
-        # Using auto-updated 2.5 model alias if available, falling back to exp/latest
         self.model = genai.GenerativeModel('gemini-2.0-flash-exp') 
 
-    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 8000) -> str:
+    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
         try:
-            # Gemini supports system instructions in model config or combined with prompt
-            # Here combining for simplicity and compatibility
             full_prompt = f"{system_prompt}\n\n{user_prompt}"
             
             response = self.model.generate_content(
@@ -285,10 +331,9 @@ class DeepInfraAnalyst(BaseAnalyst):
             api_key=settings.deepinfra_api_key,
             base_url="https://api.deepinfra.com/v1/openai"
         )
-        # Default high-performance model
         self.model_name = "Qwen/Qwen3-Next-80B-A3B-Instruct"
 
-    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 8000) -> str:
+    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
         try:
             response = self.client.chat.completions.create(
                 model=self.model_name,
@@ -304,7 +349,7 @@ class DeepInfraAnalyst(BaseAnalyst):
             self.logger.error(f"DeepInfra API error: {str(e)}")
             raise
 
-# Factory to get the configured analyst
+# Factory
 def get_analyst() -> BaseAnalyst:
     provider = settings.ai_provider.lower()
     

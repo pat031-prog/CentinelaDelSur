@@ -17,7 +17,7 @@ export default function Dashboard() {
         setCountries(c)
         setAlerts(a.alerts || [])
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Connection failed')
+        setError(e instanceof Error ? e.message : 'Error de conexión')
       } finally {
         setLoading(false)
       }
@@ -37,74 +37,49 @@ export default function Dashboard() {
 
   return (
     <div className="fade-in">
-      {/* ===== GREETING + SUMMARY ===== */}
+      {/* ===== SALUDO + RESUMEN ===== */}
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ marginBottom: '0.5rem' }}>Situation Room</h1>
+        <h1 style={{ marginBottom: '0.5rem' }}>Sala de Situación</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '640px', lineHeight: 1.6 }}>
-          ATALAYA monitors <strong>{countries.length} sovereign entities</strong> across Latin America.{' '}
+          ATALAYA monitorea <strong>{countries.length} entidades soberanas</strong> en América Latina.{' '}
           {critical.length > 0
-            ? <>Currently <strong style={{ color: 'var(--risk-red)' }}>{critical.length} zone{critical.length > 1 ? 's' : ''}</strong> require{critical.length === 1 ? 's' : ''} immediate attention.</>
-            : <>All zones within acceptable parameters.</>
+            ? <>Actualmente <strong style={{ color: 'var(--risk-red)' }}>{critical.length} zona{critical.length > 1 ? 's' : ''}</strong> requiere{critical.length > 1 ? 'n' : ''} atención inmediata.</>
+            : <>Todos los indicadores dentro de parámetros aceptables.</>
           }
         </p>
       </div>
 
-      {/* ===== STAT CARDS ROW ===== */}
+      {/* ===== TARJETAS ESTADÍSTICAS ===== */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
         gap: '1rem',
         marginBottom: '2rem',
       }}>
+        <StatCard label="Monitoreados" value={`${countries.length}`} sub="Regiones activas" bg="card--cream" />
         <StatCard
-          label="Monitored"
-          value={`${countries.length}`}
-          sub="Active regions"
-          bg="card--cream"
-        />
-        <StatCard
-          label="Critical"
+          label="Críticos"
           value={`${critical.length}`}
-          sub={critical.length > 0 ? critical.map(c => c.code).join(', ') : 'None'}
+          sub={critical.length > 0 ? critical.map(c => c.code).join(', ') : 'Ninguno'}
           bg="card--salmon"
         />
-        <StatCard
-          label="Watchlist"
-          value={`${watchlist.length}`}
-          sub="Elevated monitoring"
-          bg="card--sage"
-        />
-        <StatCard
-          label="Avg Risk"
-          value={avgRisk.toFixed(1)}
-          sub="Regional composite"
-          bg="card--lavender"
-        />
+        <StatCard label="Vigilancia" value={`${watchlist.length}`} sub="Monitoreo elevado" bg="card--sage" />
+        <StatCard label="Riesgo Prom." value={avgRisk.toFixed(1)} sub="Compuesto regional" bg="card--lavender" />
       </div>
 
-      {/* ===== MAIN 2-COLUMN LAYOUT ===== */}
+      {/* ===== LAYOUT 2 COLUMNAS ===== */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 360px',
         gap: '1.5rem',
         alignItems: 'start',
       }}>
-        {/* LEFT: Country Matrix */}
+        {/* IZQUIERDA: Matriz de Países */}
         <div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1rem',
-          }}>
-            <h3>Country Matrix</h3>
-            <Link to="/regional" style={{
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              color: 'var(--text-muted)',
-              borderBottom: '1px solid var(--border)',
-            }}>
-              Show all →
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3>Matriz de Países</h3>
+            <Link to="/regional" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
+              Ver todos →
             </Link>
           </div>
 
@@ -119,7 +94,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* RIGHT: Intel Feed */}
+        {/* DERECHA: Feed de Inteligencia */}
         <div className="card" style={{ padding: 0, overflow: 'hidden', position: 'sticky', top: '5.5rem' }}>
           <div style={{
             padding: '1rem 1.25rem',
@@ -129,8 +104,8 @@ export default function Dashboard() {
             alignItems: 'center',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--risk-red)', display: 'inline-block' }} />
-              <span className="label">LIVE INTEL FEED</span>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--risk-red)', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+              <span className="label">FEED DE INTELIGENCIA EN VIVO</span>
             </div>
             <span className="pill" style={{ fontSize: '0.7rem' }}>{alerts.length}</span>
           </div>
@@ -138,7 +113,7 @@ export default function Dashboard() {
           <div style={{ maxHeight: '520px', overflowY: 'auto' }}>
             {alerts.length === 0 ? (
               <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No active signals detected.
+                No se detectaron señales activas.
               </div>
             ) : (
               alerts.slice(0, 8).map(alert => (
@@ -152,7 +127,7 @@ export default function Dashboard() {
   )
 }
 
-/* ===== SUB-COMPONENTS ===== */
+/* ===== SUB-COMPONENTES ===== */
 
 function StatCard({ label, value, sub, bg }: { label: string; value: string; sub: string; bg: string }) {
   return (
@@ -191,7 +166,6 @@ function CountryRow({ country, index }: { country: Country; index: number }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {/* Mini bar */}
           <div style={{ width: 60, height: 6, borderRadius: 3, background: '#e8e3da', overflow: 'hidden' }}>
             <div style={{ width: `${country.current_risk_score}%`, height: '100%', background: riskColor, borderRadius: 3 }} />
           </div>
@@ -219,7 +193,7 @@ function AlertRow({ alert }: { alert: Alert }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
         <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>{alert.country_code}</span>
         <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-          {new Date(alert.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+          {new Date(alert.created_at).toLocaleDateString('es-419', { month: 'short', day: 'numeric' })}
         </span>
       </div>
       <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '4px', lineHeight: 1.3 }}>{alert.title}</div>
@@ -252,10 +226,10 @@ function ErrorState({ message }: { message: string }) {
   return (
     <div className="card card--salmon" style={{ padding: '2rem', textAlign: 'center', maxWidth: 480, margin: '4rem auto' }}>
       <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚠</div>
-      <h3 style={{ marginBottom: '0.5rem' }}>Connection Failed</h3>
+      <h3 style={{ marginBottom: '0.5rem' }}>Error de Conexión</h3>
       <p style={{ color: 'rgba(0,0,0,0.6)', fontSize: '0.9rem' }}>{message}</p>
       <button className="btn btn--primary" onClick={() => window.location.reload()} style={{ marginTop: '1rem' }}>
-        Retry
+        Reintentar
       </button>
     </div>
   )

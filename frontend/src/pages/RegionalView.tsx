@@ -22,8 +22,8 @@ export default function RegionalView() {
     load()
   }, [])
 
-  if (loading) return <div style={{ padding: '3rem', color: 'var(--text-muted)' }}>Scanning region...</div>
-  if (!data) return <div style={{ padding: '3rem', color: 'var(--risk-red)' }}>Region unavailable</div>
+  if (loading) return <div style={{ padding: '3rem', color: 'var(--text-muted)' }}>Escaneando región...</div>
+  if (!data) return <div style={{ padding: '3rem', color: 'var(--risk-red)' }}>Región no disponible</div>
 
   const scoreToLevel = (s: number) => {
     if (s >= 85) return 'black' as const
@@ -39,20 +39,24 @@ export default function RegionalView() {
     orange: 'var(--risk-orange)', red: 'var(--risk-red)', black: 'var(--risk-black)',
   }
 
+  const levelLabels: Record<string, string> = {
+    green: 'Estable', yellow: 'Vigilancia', orange: 'Elevado', red: 'Crítico', black: 'Colapso',
+  }
+
   return (
     <div className="fade-in">
-      {/* Header */}
+      {/* Encabezado */}
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ marginBottom: '0.5rem' }}>Regional Intelligence</h1>
+        <h1 style={{ marginBottom: '0.5rem' }}>Inteligencia Regional</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '600px', lineHeight: 1.6 }}>
-          Hemispheric scan of <strong>{data.total_countries}</strong> sovereign entities.
-          Average regional fragility index stands at <strong style={{
+          Escaneo hemisférico de <strong>{data.total_countries}</strong> entidades soberanas.
+          El índice de fragilidad regional promedio se sitúa en <strong style={{
             color: data.regional_risk_score >= 50 ? 'var(--risk-orange)' : 'var(--text-primary)'
           }}>{data.regional_risk_score?.toFixed(1)}</strong>.
         </p>
       </div>
 
-      {/* ===== TOP: GAUGE + DISTRIBUTION ===== */}
+      {/* ===== GAUGE + DISTRIBUCIÓN ===== */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '280px 1fr',
@@ -60,7 +64,7 @@ export default function RegionalView() {
         marginBottom: '2.5rem',
       }}>
         <div className="card" style={{ padding: '1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="label" style={{ marginBottom: '1rem' }}>HEMISPHERE THREAT INDEX</div>
+          <div className="label" style={{ marginBottom: '1rem' }}>ÍNDICE DE AMENAZA HEMISFÉRICA</div>
           <RiskGauge
             score={data.regional_risk_score || 0}
             level={scoreToLevel(data.regional_risk_score || 0)}
@@ -89,7 +93,7 @@ export default function RegionalView() {
                   fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
                   letterSpacing: '0.08em', color: distColors[level] || 'var(--text-muted)',
                   marginTop: '0.375rem',
-                }}>{level}</div>
+                }}>{levelLabels[level] || level}</div>
               </div>
             )
           })}
@@ -99,7 +103,7 @@ export default function RegionalView() {
       {/* ===== TOP 5 ===== */}
       {data.top_5_at_risk?.length > 0 && (
         <div style={{ marginBottom: '2.5rem' }}>
-          <div className="label" style={{ marginBottom: '1rem' }}>TOP 5 – HIGHEST RISK</div>
+          <div className="label" style={{ marginBottom: '1rem' }}>TOP 5 — MAYOR RIESGO</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
             {data.top_5_at_risk.map((c: any, i: number) => (
               <Link key={c.code} to={`/country/${c.code}`} style={{ textDecoration: 'none' }}>
@@ -123,8 +127,8 @@ export default function RegionalView() {
         </div>
       )}
 
-      {/* ===== FULL MATRIX ===== */}
-      <div className="label" style={{ marginBottom: '1rem' }}>ALL ENTITIES</div>
+      {/* ===== TODAS LAS ENTIDADES ===== */}
+      <div className="label" style={{ marginBottom: '1rem' }}>TODAS LAS ENTIDADES</div>
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',

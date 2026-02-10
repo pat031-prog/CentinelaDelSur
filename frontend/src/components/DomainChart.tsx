@@ -20,12 +20,12 @@ const COLORS: Record<AlertLevel, string> = {
 }
 
 const NAMES: Record<string, string> = {
-  political: 'Political',
-  economic: 'Economic',
-  supply_chain: 'Supply Chain',
-  geopolitical: 'Geopolitical',
-  climate: 'Climate',
-  technology: 'Technology',
+  political: 'Político',
+  economic: 'Económico',
+  supply_chain: 'Cadena de Suministro',
+  geopolitical: 'Geopolítico',
+  climate: 'Climático',
+  technology: 'Tecnología',
 }
 
 export default function DomainChart({ data }: Props) {

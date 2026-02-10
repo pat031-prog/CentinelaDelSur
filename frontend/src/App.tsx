@@ -8,13 +8,13 @@ function App() {
   const location = useLocation()
 
   const navItems = [
-    { to: '/', icon: '⊞', label: 'Dashboard' },
-    { to: '/regional', icon: '◉', label: 'Regional Scan' },
+    { to: '/', icon: '⊞', label: 'Panel Principal' },
+    { to: '/regional', icon: '◉', label: 'Vista Regional' },
   ]
 
   const toolItems = [
-    { to: '#', icon: '⬡', label: 'Reports' },
-    { to: '#', icon: '⚙', label: 'Settings' },
+    { to: '#', icon: '⬡', label: 'Reportes' },
+    { to: '#', icon: '⚙', label: 'Configuración' },
   ]
 
   return (
@@ -33,7 +33,7 @@ function App() {
         zIndex: 100,
         borderRight: '1px solid rgba(255,255,255,0.06)',
       }}>
-        {/* Brand */}
+        {/* Marca */}
         <div style={{
           padding: '1.5rem 1.25rem',
           display: 'flex',
@@ -52,7 +52,7 @@ function App() {
           }}>◈</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.01em' }}>ATALAYA</div>
-            <div style={{ fontSize: '0.65rem', opacity: 0.4, letterSpacing: '0.08em' }}>INTELLIGENCE SYS</div>
+            <div style={{ fontSize: '0.65rem', opacity: 0.4, letterSpacing: '0.08em' }}>INTELIGENCIA</div>
           </div>
         </div>
 
@@ -64,15 +64,15 @@ function App() {
           ))}
         </div>
 
-        {/* Tools */}
+        {/* Herramientas */}
         <div style={{ padding: '1.25rem 0.75rem 0' }}>
-          <div style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.35, letterSpacing: '0.1em', padding: '0 0.5rem', marginBottom: '0.5rem' }}>TOOLS</div>
+          <div style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.35, letterSpacing: '0.1em', padding: '0 0.5rem', marginBottom: '0.5rem' }}>HERRAMIENTAS</div>
           {toolItems.map(item => (
             <NavLink key={item.label} item={item} active={false} />
           ))}
         </div>
 
-        {/* Bottom */}
+        {/* Pie */}
         <div style={{ marginTop: 'auto', padding: '1rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: '0.625rem',
@@ -85,20 +85,20 @@ function App() {
               background: 'linear-gradient(135deg, #C8D5A0, #E8B4A6)',
             }} />
             <div>
-              <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Analyst</div>
-              <div style={{ fontSize: '0.6rem', opacity: 0.4 }}>Clearance L5</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>Analista</div>
+              <div style={{ fontSize: '0.6rem', opacity: 0.4 }}>Nivel 5</div>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* ===== MAIN ===== */}
+      {/* ===== CONTENIDO PRINCIPAL ===== */}
       <main className="main-content" style={{
         marginLeft: 'var(--sidebar-w)',
         flex: 1,
         minHeight: '100vh',
       }}>
-        {/* Top Bar */}
+        {/* Barra superior */}
         <header style={{
           padding: '1.25rem 2rem',
           display: 'flex',
@@ -110,7 +110,7 @@ function App() {
           top: 0,
           zIndex: 50,
         }}>
-          {/* Search */}
+          {/* Búsqueda */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -124,7 +124,7 @@ function App() {
             <span style={{ opacity: 0.4 }}>🔍</span>
             <input
               type="text"
-              placeholder="Search countries, reports..."
+              placeholder="Buscar países, reportes..."
               style={{
                 border: 'none',
                 outline: 'none',
@@ -137,9 +137,9 @@ function App() {
             />
           </div>
 
-          {/* Filter tabs (like Intelly) */}
+          {/* Filtros */}
           <div style={{ display: 'flex', gap: '0.25rem' }}>
-            {['All', 'Critical', 'Watchlist', 'Stable'].map((tab, i) => (
+            {['Todos', 'Críticos', 'Vigilancia', 'Estables'].map((tab, i) => (
               <button key={tab} className={i === 0 ? 'btn btn--primary' : 'pill'} style={{
                 ...(i === 0 ? { padding: '6px 14px', fontSize: '0.8rem' } : { cursor: 'pointer', fontSize: '0.8rem' }),
               }}>
@@ -148,7 +148,7 @@ function App() {
             ))}
           </div>
 
-          {/* Time + Notifications */}
+          {/* Hora + Notificaciones */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <Clock />
             <div style={{
@@ -160,7 +160,7 @@ function App() {
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* Contenido */}
         <div style={{ padding: '2rem' }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
@@ -207,7 +207,7 @@ function Clock() {
       color: 'var(--text-secondary)',
       letterSpacing: '0.02em',
     }}>
-      {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      {time.toLocaleTimeString('es-419', { hour: '2-digit', minute: '2-digit' })}
     </span>
   )
 }

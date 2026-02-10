@@ -9,11 +9,11 @@ const COLORS: Record<AlertLevel, string> = {
 }
 
 const LABELS: Record<AlertLevel, string> = {
-  green: 'Stable',
-  yellow: 'Watch',
-  orange: 'Elevated',
-  red: 'Critical',
-  black: 'Collapse',
+  green: 'Estable',
+  yellow: 'Vigilancia',
+  orange: 'Elevado',
+  red: 'Crítico',
+  black: 'Colapso',
 }
 
 interface Props {
