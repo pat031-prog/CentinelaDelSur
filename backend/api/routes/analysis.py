@@ -92,12 +92,16 @@ async def generate_deep_analysis(
         country_code, dominant_domain, risk["score"], domain_scores
     )
 
-    # Fetch real-time news context (non-blocking, never fails the whole pipeline)
+    # Fetch real-time context (Stage 0.5) - non-blocking
     news_context = ""
     try:
-        news_context = await _fetch_news_context(info["name"], country_code)
+        from backend.intelligence.data_fetcher import get_country_context
+        # Pass both code and name for broad search
+        news_context = await get_country_context(country_code, info["name"])
     except Exception as e:
-        log.warning(f"News fetch skipped: {e}")
+        log.warning(f"Stage 0.5 Data fetch failed: {e}")
+        # Fallback to minimal message to prevent hallucination
+        news_context = "DATA FETCH FAILED. DO NOT INVENT DATA. STATE 'Data Unavailable'."
 
     # ========================================================================
     # 4-STAGE ATALAYA PIPELINE: Extraction → Analysis → Quantification → Synthesis

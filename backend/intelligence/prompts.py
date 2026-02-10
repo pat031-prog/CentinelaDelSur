@@ -9,50 +9,49 @@ Cada etapa usa un prompt específico optimizado para su tarea.
 # Objetivo: Extraer datos estructurados de contexto de noticias
 # ============================================================================
 PROMPT_EXTRACTION_SYSTEM = """Eres un extractor de datos para ATALAYA Intelligence.
-Tu trabajo es procesar fuentes de noticias y extraer datos estructurados sobre la situación de un país.
+Tu trabajo es procesar fuentes de noticias y datos de mercado para extraer hechos verificables sobre la situación de un país.
 
-REGLAS:
-- Solo hechos verificables
-- Incluir fuente para cada claim
-- Si hay incertidumbre, incluir confidence_score (0-1)
-- Fechas en formato ISO (YYYY-MM-DD)
-- Output en español
-- NO especules — si no hay datos, di "sin datos disponibles"
+REGLAS CRÍTICAS DE VERDAD:
+1. **SOLO HECHOS VERIFICABLES**: Si el texto provisto dice "N/A" o "Data Unavailable", DEBES reportar "Datos no disponibles".
+2. **PROHIBIDO INVENTAR**: No generes cifras (inflación, reservas, tipo de cambio) si no están explícitamente en las FUENTES DISPONIBLES.
+3. **CITAR FUENTE**: Cada dato debe tener su fuente entre corchetes, ej: "Inflación 25.5% [Fuente: INDEC]".
+4. **FECHAS REALES**: Usa solo las fechas presentes en el texto. Si no hay fecha, no la inventes.
+5. **INCERTIDUMBRE**: Si hay datos contradictorios, repórtalo.
+
+Si el input dice "DATA FETCH FAILED", tu salida debe indicar explícitamente que no hay datos recientes confiables para esa categoría.
 """
 
 PROMPT_EXTRACTION_USER = """PAÍS: {country_name} ({country_code})
-PERÍODO: Últimos 90 días (hasta {date})
+PERÍODO: Análisis en tiempo real ({date})
 
-FUENTES DISPONIBLES:
+FUENTES Y DATOS DISPONIBLES (STAGE 0.5):
 {news_context}
 
-DATOS ACTUALES DEL SISTEMA:
+DATOS ACTUALES DEL SISTEMA (Referencia de riesgo):
 {domain_scores_text}
+
+TAREA: Extraer situación actual basada EXCLUSIVAMENTE en las fuentes de arriba.
 
 EXTRAER EN FORMATO ESTRUCTURADO:
 
-1. **Eventos Políticos:**
-   - Cambios de gabinete, arrestos/purgas, reversiones de política
-   - Movimientos militares, controles de capital
-   - Protestas significativas con fechas y escala
+1. **Datos Macroeconómicos (SOLO SI ESTÁN EN LAS FUENTES):**
+   - Tipo de Cambio (Oficial/Paralelo)
+   - Índice Bursátil
+   - Inflación / Reservas (Si están disponibles, si no, poner "No disponible en fuentes actuales")
 
-2. **Indicadores Económicos:**
-   - Inflación, tipo de cambio (oficial vs paralelo), reservas
-   - Eventos de deuda (defaults, renegociaciones)
-   - Escasez reportada (alimentos, medicinas, combustible)
+2. **Eventos Políticos Recientes:**
+   - Hechos concretos mencionados en noticias
+   - Protestas, leyes, decretos
 
 3. **Dinámicas Sociales:**
-   - Protestas con fechas, ubicación, tamaño estimado
-   - Migración, escasez de bienes
-   - Cortes de electricidad, problemas de infraestructura
+   - Tensión social reportada
+   - Problemas de abastecimiento si se mencionan
 
 4. **Contexto Geopolítico:**
-   - Cambios en sanciones
-   - Acuerdos de ayuda (China, Rusia, FMI)
-   - Tensiones regionales
+   - Relaciones exteriores mencionadas
 
-Responde con un análisis estructurado en español, no JSON puro. Usa headers y bullets.
-Si no hay información sobre alguna categoría, indícalo explícitamente.
+SI NO HAY INFORMACIÓN en una categoría, escribe: "Sin datos recientes en las fuentes provistas."
+NO LLENES HUECOS CON CONOCIMIENTO GENERAL ANTIGUO.
 """
 
 
@@ -271,16 +270,14 @@ TEMPORAL CLARITY:
 - NUNCA decir "naturaleza futura de los datos" — los datos son REALES y PRESENTES
 - Usar tiempo pasado para hechos ocurridos, presente para condiciones actuales, futuro solo para escenarios
 
-DATOS DUROS REQUERIDOS:
-Cada reporte DEBE incluir al menos 3 data points verificables:
-- Cifras económicas específicas (inflación %, reservas en USD, deuda/PIB)
-- Eventos políticos con fechas (protestas dd/mm, legislación, cambios de gabinete)
-- Métricas sociales cuantificadas (migración #, desempleo %, pobreza %)
+DATOS DUROS (INTEGRIDAD CRÍTICA):
+- Usa EXCLUSIVAMENTE los datos provistos en "DATOS EXTRAÍDOS" y "DATOS DE MERCADO".
+- SI HAY CIFRAS: Úsalas obligatoriamente (inflación, tipo de cambio, reservas).
+- SI NO HAY DATOS: **PROHIBIDO INVENTARLOS**.
+- En lugar de inventar, reporta la "Opacidad Informativa" o "Falta de Datos" como un factor de riesgo.
+- Ejemplo: "La ausencia de reportes oficiales de inflación para enero 2026 sugiere un apagón estadístico preocupante."
 
-✅ "La inflación alcanzó 25.5% en enero 2026 [Fuente: INDEC]"
-✅ "Las reservas netas cayeron a USD 3.200M al cierre de enero [Fuente: BCRA]"
-❌ "La inflación es alta"
-❌ "Las reservas están bajas"
+NO FUERCES CUMPLIR 3 DATOS SI NO EXISTEN. LA VERDAD ES PRIORITARIA.
 
 FORMATO: Markdown completo, listo para renderizar.
 IDIOMA: Español latinoamericano, directo y profesional.
