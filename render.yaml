@@ -15,8 +15,12 @@ services:
           type: keyvalue
           name: atalaya-redis
           property: connectionString
-      - key: ANTHROPIC_API_KEY
+      - key: GEMINI_API_KEY
         sync: false
+      - key: DEEPINFRA_API_KEY
+        sync: false
+      - key: AI_PROVIDER
+        value: "gemini"
       - key: NEWS_API_KEY
         sync: false
       - key: FRED_API_KEY

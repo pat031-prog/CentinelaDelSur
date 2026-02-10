@@ -1,10 +1,13 @@
 import json
+import logging
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
+import google.generativeai as genai
+from openai import OpenAI
 from backend.utils.config import settings
 from backend.utils.logger import logger
 
-
-# ATALAYA system prompt for Claude analysis
+# ATALAYA system prompt
 SYSTEM_PROMPT = """You are ATALAYA, an advanced anticipatory intelligence system designed to detect early signals of systemic crises in Latin America and the Global South. You operate as a strategic watchtower that simultaneously monitors multiple critical domains: politics, economics, supply chains, geopolitics, security, climate, and technology.
 
 Your function is not only to alert, but to anticipate inflection points where gradual changes accelerate toward systemic ruptures.
@@ -24,27 +27,15 @@ Alert levels:
 
 Always be transparent about confidence levels, admit uncertainties, and avoid unnecessary alarmism while not downplaying real risks. Quantify whenever possible."""
 
-
-class ClaudeAnalyst:
-    """Interface with Claude API for deep crisis analysis.
-
-    Uses Anthropic's Claude to generate nuanced geopolitical analysis,
-    identify tipping points, simulate cascades, and find historical analogs.
-    """
-
+class BaseAnalyst(ABC):
+    """Abstract base class for AI analysts."""
+    
     def __init__(self):
-        self.logger = logger.getChild("claude_analyst")
-        self._client = None
+        self.logger = logger.getChild(self.__class__.__name__)
 
-    @property
-    def client(self):
-        """Lazy-initialize Anthropic client."""
-        if self._client is None:
-            if not settings.anthropic_api_key:
-                raise ValueError("ANTHROPIC_API_KEY not configured")
-            import anthropic
-            self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        return self._client
+    @abstractmethod
+    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 8000) -> str:
+        pass
 
     async def generate_country_report(
         self,
@@ -59,14 +50,8 @@ class ClaudeAnalyst:
         context = self._build_context(
             country_code, country_name, risk_scores, indicators, events, historical_analogs
         )
-
-        message = self.client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=8000,
-            system=SYSTEM_PROMPT,
-            messages=[{
-                "role": "user",
-                "content": f"""Generate a complete ATALAYA systemic risk report for {country_name} ({country_code}).
+        
+        prompt = f"""Generate a complete ATALAYA systemic risk report for {country_name} ({country_code}).
 
 Data context:
 {context}
@@ -83,10 +68,8 @@ Use the standard ATALAYA report format with all sections:
 9. Historical Comparison
 10. Window of Opportunity
 11. Confidence and Limitations"""
-            }],
-        )
 
-        return message.content[0].text
+        return await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=8000)
 
     async def identify_tipping_points(
         self,
@@ -95,13 +78,7 @@ Use the standard ATALAYA report format with all sections:
         current_state: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
         """Identify critical tipping points in the next 30-90 days."""
-        message = self.client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=4000,
-            system=SYSTEM_PROMPT,
-            messages=[{
-                "role": "user",
-                "content": f"""Analyze the current state of {country_name} ({country_code}) and identify the 3-5 most critical tipping points in the next 30-90 days.
+        prompt = f"""Analyze the current state of {country_name} ({country_code}) and identify the 3-5 most critical tipping points in the next 30-90 days.
 
 Current state:
 {json.dumps(current_state, indent=2, default=str)}
@@ -117,20 +94,9 @@ Respond in JSON format - an array of objects with this structure:
   "actors": ["actor1", "actor2"],
   "cascade_risk": "high/medium/low"
 }}"""
-            }],
-        )
-
-        try:
-            text = message.content[0].text
-            # Try to extract JSON from the response
-            if "```json" in text:
-                text = text.split("```json")[1].split("```")[0]
-            elif "```" in text:
-                text = text.split("```")[1].split("```")[0]
-            return json.loads(text)
-        except (json.JSONDecodeError, IndexError):
-            self.logger.warning("Could not parse tipping points as JSON, returning raw text")
-            return [{"raw_analysis": message.content[0].text}]
+        
+        response_text = await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=4000)
+        return self._parse_json(response_text)
 
     async def simulate_cascade(
         self,
@@ -139,14 +105,8 @@ Respond in JSON format - an array of objects with this structure:
         initial_state: Dict[str, Any],
         time_horizon: int = 90,
     ) -> Dict[str, Any]:
-        """Use Claude to simulate crisis cascades from a trigger event."""
-        message = self.client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=6000,
-            system=SYSTEM_PROMPT,
-            messages=[{
-                "role": "user",
-                "content": f"""Simulate the crisis cascades that could be triggered if this event occurs: "{trigger_event}"
+        """Simulate crisis cascades from a trigger event."""
+        prompt = f"""Simulate the crisis cascades that could be triggered if this event occurs: "{trigger_event}"
 
 Country: {country_code}
 Initial state:
@@ -162,32 +122,17 @@ Generate:
 5. Probability of each branch
 
 Respond in structured JSON format."""
-            }],
-        )
 
-        try:
-            text = message.content[0].text
-            if "```json" in text:
-                text = text.split("```json")[1].split("```")[0]
-            elif "```" in text:
-                text = text.split("```")[1].split("```")[0]
-            return json.loads(text)
-        except (json.JSONDecodeError, IndexError):
-            return {"raw_analysis": message.content[0].text}
+        response_text = await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=6000)
+        return self._parse_json(response_text, return_dict=True)
 
     async def find_historical_analogs(
         self,
         current_situation: str,
         country_code: str,
     ) -> List[Dict[str, Any]]:
-        """Find relevant historical precedents for the current situation."""
-        message = self.client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=4000,
-            system=SYSTEM_PROMPT,
-            messages=[{
-                "role": "user",
-                "content": f"""Analyze this current situation in {country_code}:
+        """Find relevant historical precedents."""
+        prompt = f"""Analyze this current situation in {country_code}:
 {current_situation}
 
 Find the 3 most relevant historical precedents from Latin America or the Global South.
@@ -201,31 +146,16 @@ For each precedent, specify:
 - applicable lessons
 
 Respond in JSON array format."""
-            }],
-        )
 
-        try:
-            text = message.content[0].text
-            if "```json" in text:
-                text = text.split("```json")[1].split("```")[0]
-            elif "```" in text:
-                text = text.split("```")[1].split("```")[0]
-            return json.loads(text)
-        except (json.JSONDecodeError, IndexError):
-            return [{"raw_analysis": message.content[0].text}]
+        response_text = await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=4000)
+        return self._parse_json(response_text)
 
     async def regional_scan(
         self,
         country_scores: Dict[str, Dict[str, Any]],
     ) -> str:
-        """Generate a regional overview scanning all Latin American countries."""
-        message = self.client.messages.create(
-            model="claude-sonnet-4-5-20250929",
-            max_tokens=6000,
-            system=SYSTEM_PROMPT,
-            messages=[{
-                "role": "user",
-                "content": f"""Run a regional scan of Latin America. Here are the current risk profiles:
+        """Generate a regional overview."""
+        prompt = f"""Run a regional scan of Latin America. Here are the current risk profiles:
 
 {json.dumps(country_scores, indent=2, default=str)}
 
@@ -235,10 +165,8 @@ Generate:
 3. Cross-border contagion risks
 4. Key regional events in next 30 days
 5. Overall regional stability assessment"""
-            }],
-        )
 
-        return message.content[0].text
+        return await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=6000)
 
     def _build_context(
         self,
@@ -249,7 +177,7 @@ Generate:
         events: List[Dict],
         analogs: Optional[List[Dict]],
     ) -> str:
-        """Build structured context for Claude analysis."""
+        """Build structured context for analysis."""
         context_parts = [
             f"COUNTRY: {country_name} ({country_code})",
             f"\nRISK SCORES:\n{json.dumps(risk_scores, indent=2, default=str)}",
@@ -267,3 +195,89 @@ Generate:
             )
 
         return "\n".join(context_parts)
+
+    def _parse_json(self, text: str, return_dict: bool = False) -> Any:
+        try:
+            # Clean up potential markdown code blocks
+            if "```json" in text:
+                text = text.split("```json")[1].split("```")[0]
+            elif "```" in text:
+                text = text.split("```")[1].split("```")[0]
+            
+            return json.loads(text)
+        except (json.JSONDecodeError, IndexError) as e:
+            self.logger.warning(f"Could not parse JSON: {e}. Returning raw text wrapper.")
+            return {"raw_analysis": text} if return_dict else [{"raw_analysis": text}]
+
+
+class GeminiAnalyst(BaseAnalyst):
+    """Google Gemini implementation."""
+    
+    def __init__(self):
+        super().__init__()
+        if not settings.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY not configured")
+        
+        genai.configure(api_key=settings.gemini_api_key)
+        # Using auto-updated 2.5 model alias if available, falling back to exp/latest
+        self.model = genai.GenerativeModel('gemini-2.0-flash-exp') 
+
+    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 8000) -> str:
+        try:
+            # Gemini supports system instructions in model config or combined with prompt
+            # Here combining for simplicity and compatibility
+            full_prompt = f"{system_prompt}\n\n{user_prompt}"
+            
+            response = self.model.generate_content(
+                full_prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.7,
+                    max_output_tokens=max_tokens,
+                )
+            )
+            return response.text
+        except Exception as e:
+            self.logger.error(f"Gemini API error: {str(e)}")
+            raise
+
+class DeepInfraAnalyst(BaseAnalyst):
+    """DeepInfra implementation (OpenAI-compatible)."""
+    
+    def __init__(self):
+        super().__init__()
+        if not settings.deepinfra_api_key:
+            raise ValueError("DEEPINFRA_API_KEY not configured")
+            
+        self.client = OpenAI(
+            api_key=settings.deepinfra_api_key,
+            base_url="https://api.deepinfra.com/v1/openai"
+        )
+        # Default high-performance model
+        self.model_name = "Qwen/Qwen3-Next-80B-A3B-Instruct"
+
+    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 8000) -> str:
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_tokens=max_tokens,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            self.logger.error(f"DeepInfra API error: {str(e)}")
+            raise
+
+# Factory to get the configured analyst
+def get_analyst() -> BaseAnalyst:
+    provider = settings.ai_provider.lower()
+    
+    if provider == "gemini":
+        return GeminiAnalyst()
+    elif provider == "deepinfra":
+        return DeepInfraAnalyst()
+    else:
+        raise ValueError(f"Unknown AI provider: {provider}")

@@ -12,7 +12,10 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
 
     # API Keys
-    anthropic_api_key: Optional[str] = None
+    gemini_api_key: Optional[str] = None
+    deepinfra_api_key: Optional[str] = None
+    ai_provider: str = "gemini"  # "gemini" or "deepinfra"
+    
     news_api_key: Optional[str] = None
     fred_api_key: Optional[str] = None
     alpha_vantage_api_key: Optional[str] = None

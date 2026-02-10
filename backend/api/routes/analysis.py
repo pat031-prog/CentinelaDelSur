@@ -53,13 +53,32 @@ async def generate_deep_analysis(
         for d, s in domain_scores.items() if s > 40
     ]
 
-    report = report_gen.generate_text_report(
-        country_code=country_code,
-        country_name=info["name"],
-        domain_scores=domain_scores,
-        trends={d: "worsening" if s > 50 else "stable" for d, s in domain_scores.items()},
-        signals=signals,
-    )
+    # Try to use AI Analyst for deep report
+    try:
+        from backend.intelligence.ai_analyst import get_analyst
+        analyst = get_analyst()
+        
+        # Determine events (mock for now, should come from DB)
+        events = []
+        indicators = []
+        
+        report = await analyst.generate_country_report(
+            country_code=country_code,
+            country_name=info["name"],
+            risk_scores=risk,
+            indicators={}, # Populate with real data eventually
+            events=events
+        )
+    except Exception as e:
+        # Fallback to template report if AI fails or not configured
+        print(f"AI Analysis failed: {e}")
+        report = report_gen.generate_text_report(
+            country_code=country_code,
+            country_name=info["name"],
+            domain_scores=domain_scores,
+            trends={d: "worsening" if s > 50 else "stable" for d, s in domain_scores.items()},
+            signals=signals,
+        )
 
     return {
         "country_code": country_code,

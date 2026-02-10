@@ -28,7 +28,7 @@ ATALAYA operates as a strategic watchtower that simultaneously monitors multiple
 ```
 Backend:  Python 3.11+ / FastAPI / PostgreSQL+TimescaleDB / Redis
 Frontend: React + TypeScript / Recharts / Vite
-AI:       Anthropic Claude API for deep analysis
+AI:       Google Gemini 2.0 / DeepInfra (Llama/Qwen)
 Infra:    Docker Compose
 ```
 
@@ -113,6 +113,8 @@ Set these environment variables (or use `.env` file):
 |----------|-------------|----------|
 | `DATABASE_URL` | PostgreSQL connection string | For DB features |
 | `REDIS_URL` | Redis connection string | For caching |
-| `ANTHROPIC_API_KEY` | Claude API key | For AI analysis |
+| `GEMINI_API_KEY` | Google Gemini API key | Recommended (Free/Low cost) |
+| `DEEPINFRA_API_KEY` | DeepInfra API key | Alternative (Llama/Qwen) |
+| `AI_PROVIDER` | `gemini` or `deepinfra` | Default: `gemini` |
 | `NEWS_API_KEY` | NewsAPI key | For news ingestion |
 | `FRED_API_KEY` | FRED API key | For economic data |
