@@ -50,7 +50,7 @@ export default function Dashboard() {
       </div>
 
       {/* ===== TARJETAS ESTADÍSTICAS ===== */}
-      <div style={{
+      <div className="stats-grid" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
         gap: '1rem',
@@ -68,14 +68,14 @@ export default function Dashboard() {
       </div>
 
       {/* ===== LAYOUT 2 COLUMNAS ===== */}
-      <div style={{
+      <div className="dashboard-layout" style={{
         display: 'grid',
         gridTemplateColumns: '1fr 360px',
         gap: '1.5rem',
         alignItems: 'start',
       }}>
         {/* IZQUIERDA: Matriz de Países */}
-        <div>
+        <div className="country-matrix">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3>Matriz de Países</h3>
             <Link to="/regional" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
@@ -95,7 +95,7 @@ export default function Dashboard() {
         </div>
 
         {/* DERECHA: Feed de Inteligencia */}
-        <div className="card" style={{ padding: 0, overflow: 'hidden', position: 'sticky', top: '5.5rem' }}>
+        <div className="card intelligence-feed" style={{ padding: 0, overflow: 'hidden', position: 'sticky', top: '5.5rem' }}>
           <div style={{
             padding: '1rem 1.25rem',
             borderBottom: '1px solid var(--border)',

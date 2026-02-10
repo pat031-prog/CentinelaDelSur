@@ -169,6 +169,22 @@ function App() {
           </Routes>
         </div>
       </main>
+
+      {/* ===== BOTTOM NAV (Mobile Only) ===== */}
+      <nav className="bottom-nav">
+        <Link to="/" className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}>
+          <span className="icon">⊞</span>
+          <span>Inicio</span>
+        </Link>
+        <Link to="/regional" className={`nav-item ${location.pathname === '/regional' ? 'active' : ''}`}>
+          <span className="icon">◉</span>
+          <span>Mapa</span>
+        </Link>
+        <div className="nav-item">
+          <span className="icon">🔔</span>
+          <span>Alertas</span>
+        </div>
+      </nav>
     </div>
   )
 }
