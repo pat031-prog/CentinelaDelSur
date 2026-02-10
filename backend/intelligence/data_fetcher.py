@@ -63,8 +63,46 @@ async def fetch_market_data(country_code: str) -> Dict[str, Any]:
     """Fetch live market data using yfinance (non-blocking)."""
     return await asyncio.to_thread(_fetch_market_data_sync, country_code)
 
-async def fetch_google_news(country_name: str, limit: int = 5) -> List[str]:
-    """Fetch Google News RSS and extract titles + links."""
+async def fetch_news_ddg(country_name: str, limit: int = 8) -> List[str]:
+    """
+    Fetch news using DuckDuckGo Search (robust against RSS blocks).
+    Searches for 'economía política crisis' to get relevant context.
+    Includes fallback to Google News if DDGS fails (e.g. date issues).
+    """
+    results = []
+    try:
+        from duckduckgo_search import DDGS
+        
+        # Proper async wrapper call because DDGS is blocking by default
+        def _search_sync():
+            with DDGS() as ddgs:
+                # Search WITHOUT timelimit to avoid date parsing errors in future simulation
+                query = f"{country_name} economía política crisis inflación"
+                return list(ddgs.text(query, region="wt-wt", safesearch="off", max_results=limit))
+
+        raw_results = await asyncio.to_thread(_search_sync)
+        
+        for r in raw_results:
+            title = r.get("title", "No Title")
+            snippet = r.get("body", "")
+            link = r.get("href", "")
+            source = r.get("source", "Web")
+            # Format: - TITLE (Source) \n  Snippet... [Link]
+            results.append(f"- **{title}** ({source})\n  \"{snippet}\"\n  [Link: {link}]")
+            
+    except Exception as e:
+        log.warning(f"DuckDuckGo search failed: {e}")
+        # FALLBACK: Google News RSS (better than nothing)
+        try:
+            log.info("Falling back to Google News RSS...")
+            return await fetch_google_news_fallback(country_name, limit)
+        except Exception as ex:
+             results.append(f"Search failed: {e} | Fallback failed: {ex}")
+        
+    return results
+
+async def fetch_google_news_fallback(country_name: str, limit: int = 5) -> List[str]:
+    """Fallback Google News RSS scraper."""
     articles = []
     try:
         url = f"https://news.google.com/rss/search?q={country_name}+economia+politica&hl=es-419&gl=LATAM&ceid=US:es-419"
@@ -80,31 +118,7 @@ async def fetch_google_news(country_name: str, limit: int = 5) -> List[str]:
                     articles.append(f"- {title} ({pub_date}) [Link: {link}]")
     except Exception as e:
         log.warning(f"Google News fetch failed: {e}")
-        articles.append("News fetch failed.")
-        
     return articles
-
-async def fetch_economic_indicators(country_code: str) -> Dict[str, str]:
-    """
-    Attempt to fetch official economic indicators.
-    Currently returns official source URLs for manual verification if scraping is hard.
-    """
-    sources = OFFICIAL_SOURCES.get(country_code, {})
-    indicators = {}
-    
-    # Check official sources availability (simple HEAD request)
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        for key, url in sources.items():
-            try:
-                resp = await client.head(url)
-                if resp.status_code < 400:
-                    indicators[key] = f"Source Available: {url}"
-                else:
-                    indicators[key] = f"Source Unreachable ({resp.status_code}): {url}"
-            except Exception:
-                indicators[key] = f"Connection Failed: {url}"
-                
-    return indicators
 
 async def get_country_context(country_code: str, country_name: str) -> str:
     """
@@ -113,10 +127,10 @@ async def get_country_context(country_code: str, country_name: str) -> str:
     """
     # Run fetches in parallel
     market_task = fetch_market_data(country_code)
-    news_task = fetch_google_news(country_name)
-    indicators_task = fetch_economic_indicators(country_code)
+    news_task = fetch_news_ddg(country_name)
+    # We skip specific indicator scraping as DDGS covers it better via snippets
     
-    market, news, indicators = await asyncio.gather(market_task, news_task, indicators_task)
+    market, news = await asyncio.gather(market_task, news_task)
     
     context = []
     
@@ -127,19 +141,10 @@ async def get_country_context(country_code: str, country_name: str) -> str:
         context.append(f"Source: {market['source']}")
     context.append("")
     
-    context.append(f"=== OFFICIAL ECONOMIC SOURCES ({country_code}) ===")
-    if indicators:
-        for k, v in indicators.items():
-            context.append(f"{k.upper()}: {v}")
-    else:
-        context.append("No specific official sources configured.")
-    context.append("INSTRUCTION: If specific values (inflation, reserves) are not listed above, DO NOT INVENT THEM. Use 'Data Unavailable' or cite the source link as 'pending verification'.")
-    context.append("")
-    
-    context.append(f"=== RECENT NEWS ({country_name}) ===")
+    context.append(f"=== SEARCH RESULTS & NEWS Snippets ({country_name}) ===")
     if news:
         context.extend(news)
     else:
-        context.append("No recent news found.")
+        context.append("DATA FETCH FAILED: No recent news found via DuckDuckGo or Fallback.")
         
     return "\n".join(context)
