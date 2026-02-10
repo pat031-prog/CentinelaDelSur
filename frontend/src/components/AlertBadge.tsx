@@ -9,47 +9,71 @@ const LEVEL_COLORS: Record<AlertLevel, string> = {
 }
 
 const LEVEL_LABELS: Record<AlertLevel, string> = {
-  green: 'LOW',
-  yellow: 'MODERATE',
+  green: 'ALL CLEAR',
+  yellow: 'WATCHLIST',
   orange: 'ELEVATED',
-  red: 'HIGH',
-  black: 'CRITICAL',
+  red: 'CRITICAL',
+  black: 'COLLAPSE',
 }
 
 interface AlertBadgeProps {
   level: AlertLevel
   size?: 'sm' | 'md' | 'lg'
   showLabel?: boolean
+  pulsing?: boolean
+  className?: string
 }
 
-export default function AlertBadge({ level, size = 'md', showLabel = true }: AlertBadgeProps) {
+export default function AlertBadge({ level, size = 'md', showLabel = true, pulsing = true, className = '' }: AlertBadgeProps) {
   const color = LEVEL_COLORS[level] || 'var(--text-muted)'
-  const sizes = { sm: '0.75rem', md: '1rem', lg: '1.5rem' }
+
+  const sizeMap = {
+    sm: { dot: '6px', font: '0.7rem', padding: '2px 6px' },
+    md: { dot: '8px', font: '0.8rem', padding: '4px 8px' },
+    lg: { dot: '10px', font: '0.9rem', padding: '6px 12px' },
+  }
+
+  const currentSize = sizeMap[size || 'md']
+
+  // Only pulse for severe threats
+  const shouldPulse = pulsing && (level === 'red' || level === 'black')
+  const animationName = level === 'black' ? 'pulse-glow-black' : 'pulse-glow'
 
   return (
-    <span style={{
+    <div className={className} style={{
       display: 'inline-flex',
       alignItems: 'center',
       gap: '0.5rem',
+      background: `rgba(0,0,0,0.2)`,
+      border: `1px solid ${color}`,
+      padding: currentSize.padding,
+      borderRadius: '4px',
+      boxShadow: shouldPulse ? `0 0 8px ${color}20` : 'none',
+      transition: 'all 0.3s ease'
     }}>
       <span style={{
-        width: sizes[size],
-        height: sizes[size],
+        width: currentSize.dot,
+        height: currentSize.dot,
         borderRadius: '50%',
         backgroundColor: color,
         display: 'inline-block',
-        boxShadow: `0 0 8px ${color}40`,
+        boxShadow: `0 0 6px ${color}80`,
+        animation: shouldPulse ? `${animationName} 2s infinite` : 'none',
       }} />
+
       {showLabel && (
         <span style={{
-          color,
+          color: color,
           fontWeight: 600,
-          fontSize: size === 'sm' ? '0.7rem' : size === 'lg' ? '1rem' : '0.85rem',
+          fontFamily: 'JetBrains Mono',
+          fontSize: currentSize.font,
           letterSpacing: '0.05em',
+          textShadow: `0 0 8px ${color}40`,
+          textTransform: 'uppercase'
         }}>
-          {LEVEL_LABELS[level] || level.toUpperCase()}
+          {LEVEL_LABELS[level]}
         </span>
       )}
-    </span>
+    </div>
   )
 }
