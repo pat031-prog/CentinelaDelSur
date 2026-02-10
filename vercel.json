@@ -4,12 +4,8 @@
     "framework": "vite",
     "rewrites": [
         {
-            "source": "/api/(.*)",
-            "destination": "/api/index.py"
-        },
-        {
             "source": "/(.*)",
-            "destination": "/frontend/dist/index.html"
+            "destination": "/index.html"
         }
     ]
 }

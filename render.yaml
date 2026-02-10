@@ -28,20 +28,6 @@ services:
       - key: DEBUG
         value: "false"
 
-  # Frontend (React + Nginx)
-  - type: web
-    name: atalaya-frontend
-    runtime: docker
-    rootDir: frontend
-    dockerfilePath: ./Dockerfile
-    plan: free
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: atalaya-backend
-          envVarKey: RENDER_EXTERNAL_URL
-
   # Redis / Key Value Store
   - type: keyvalue
     name: atalaya-redis

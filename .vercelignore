@@ -1,0 +1,6 @@
+# Ignore Python backend - it deploys on Render, not Vercel
+backend/
+requirements.txt
+Dockerfile
+render.yaml
+*.py
