@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # API Keys
     gemini_api_key: Optional[str] = None
     deepinfra_api_key: Optional[str] = None
-    ai_provider: str = "gemini"  # "gemini" or "deepinfra"
+    ai_provider: str = "auto"  # "auto" (cascade), "gemini", "deepinfra", "deepseek"
     
     news_api_key: Optional[str] = None
     fred_api_key: Optional[str] = None

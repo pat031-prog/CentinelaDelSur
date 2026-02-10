@@ -180,15 +180,28 @@ function CountryRow({ country, index }: { country: Country; index: number }) {
 }
 
 function AlertRow({ alert }: { alert: Alert }) {
+  const handleClick = () => {
+    if (alert.source_url) {
+      window.open(alert.source_url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
     <div style={{
       padding: '0.875rem 1.25rem',
       borderBottom: '1px solid rgba(0,0,0,0.04)',
-      cursor: 'pointer',
-      transition: 'background 0.15s',
+      cursor: alert.source_url ? 'pointer' : 'default',
+      transition: 'background 0.15s, transform 0.1s',
     }}
-      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.02)')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+      onClick={handleClick}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = 'rgba(0,0,0,0.03)'
+        e.currentTarget.style.transform = 'translateX(2px)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = 'transparent'
+        e.currentTarget.style.transform = 'translateX(0)'
+      }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
         <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>{alert.country_code}</span>
@@ -199,10 +212,40 @@ function AlertRow({ alert }: { alert: Alert }) {
       <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '4px', lineHeight: 1.3 }}>{alert.title}</div>
       <div style={{
         fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4,
-        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
       }}>{alert.description}</div>
-      <div style={{ marginTop: '0.5rem' }}>
+
+      {/* Editorial micro-analysis */}
+      {alert.editorial && (
+        <div style={{
+          fontSize: '0.75rem',
+          color: 'var(--text-muted)',
+          fontStyle: 'italic',
+          lineHeight: 1.4,
+          marginTop: '6px',
+          padding: '6px 8px',
+          background: 'rgba(0,0,0,0.02)',
+          borderRadius: 4,
+          borderLeft: '2px solid var(--border)',
+        }}>
+          {alert.editorial}
+        </div>
+      )}
+
+      <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <AlertBadge level={alert.alert_level} size="sm" />
+        {alert.source_url && (
+          <span style={{
+            fontSize: '0.7rem',
+            color: 'var(--accent)',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+          }}>
+            Ver fuente ↗
+          </span>
+        )}
       </div>
     </div>
   )

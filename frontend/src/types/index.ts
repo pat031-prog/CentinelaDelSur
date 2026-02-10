@@ -52,6 +52,8 @@ export interface Alert {
   domain?: string
   title: string
   description: string
+  editorial?: string
+  source_url?: string
   probability?: number
   is_active: boolean
 }

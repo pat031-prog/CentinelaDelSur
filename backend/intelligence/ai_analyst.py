@@ -293,7 +293,7 @@ Mínimo 1500 palabras. Prosa editorial, no listas."""
 
 
 class GeminiAnalyst(BaseAnalyst):
-    """Google Gemini implementation."""
+    """Google Gemini implementation with retry for 429 rate limits."""
     
     def __init__(self):
         super().__init__()
@@ -301,26 +301,42 @@ class GeminiAnalyst(BaseAnalyst):
             raise ValueError("GEMINI_API_KEY not configured")
         
         genai.configure(api_key=settings.gemini_api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash') 
+        # Use best available model: gemini-2.5-flash (GA, best price-performance)
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.provider_name = "Gemini 2.5 Flash"
 
     async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
-        try:
-            full_prompt = f"{system_prompt}\n\n{user_prompt}"
-            
-            response = self.model.generate_content(
-                full_prompt,
-                generation_config=genai.types.GenerationConfig(
-                    temperature=0.7,
-                    max_output_tokens=max_tokens,
+        import asyncio
+        full_prompt = f"{system_prompt}\n\n{user_prompt}"
+        
+        # Retry logic for 429 (rate limit) errors
+        max_retries = 3
+        for attempt in range(max_retries + 1):
+            try:
+                response = self.model.generate_content(
+                    full_prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.7,
+                        max_output_tokens=max_tokens,
+                    )
                 )
-            )
-            return response.text
-        except Exception as e:
-            self.logger.error(f"Gemini API error: {str(e)}")
-            raise
+                return response.text
+            except Exception as e:
+                error_str = str(e)
+                is_rate_limit = "429" in error_str or "ResourceExhausted" in error_str or "quota" in error_str.lower()
+                
+                if is_rate_limit and attempt < max_retries:
+                    wait_time = 2 ** (attempt + 1)  # 2s, 4s, 8s
+                    self.logger.warning(f"Gemini rate limited (attempt {attempt + 1}/{max_retries}), waiting {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                    continue
+                
+                self.logger.error(f"Gemini API error: {error_str}")
+                raise
 
-class DeepInfraAnalyst(BaseAnalyst):
-    """DeepInfra implementation (OpenAI-compatible)."""
+
+class DeepInfraQwenAnalyst(BaseAnalyst):
+    """DeepInfra Qwen3 implementation."""
     
     def __init__(self):
         super().__init__()
@@ -331,7 +347,8 @@ class DeepInfraAnalyst(BaseAnalyst):
             api_key=settings.deepinfra_api_key,
             base_url="https://api.deepinfra.com/v1/openai"
         )
-        self.model_name = "Qwen/Qwen3-Next-80B-A3B-Instruct"
+        self.model_name = "Qwen/Qwen3-235B-A22B"
+        self.provider_name = "DeepInfra Qwen3-235B"
 
     async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
         try:
@@ -346,16 +363,121 @@ class DeepInfraAnalyst(BaseAnalyst):
             )
             return response.choices[0].message.content
         except Exception as e:
-            self.logger.error(f"DeepInfra API error: {str(e)}")
+            self.logger.error(f"DeepInfra Qwen API error: {str(e)}")
             raise
+
+
+class DeepInfraDeepSeekAnalyst(BaseAnalyst):
+    """DeepInfra DeepSeek V3 implementation."""
+    
+    def __init__(self):
+        super().__init__()
+        if not settings.deepinfra_api_key:
+            raise ValueError("DEEPINFRA_API_KEY not configured")
+            
+        self.client = OpenAI(
+            api_key=settings.deepinfra_api_key,
+            base_url="https://api.deepinfra.com/v1/openai"
+        )
+        self.model_name = "deepseek-ai/DeepSeek-V3"
+        self.provider_name = "DeepInfra DeepSeek V3"
+
+    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_tokens=max_tokens,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            self.logger.error(f"DeepInfra DeepSeek API error: {str(e)}")
+            raise
+
+
+# Keep backward compat alias
+DeepInfraAnalyst = DeepInfraQwenAnalyst
+
+
+class CascadingAnalyst(BaseAnalyst):
+    """Multi-provider analyst that tries providers in cascade order.
+    
+    Order: Gemini 2.5 Flash → DeepInfra Qwen3 → DeepInfra DeepSeek V3
+    If all fail, raises the last error so the template fallback can be used.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.providers: list[tuple[str, BaseAnalyst]] = []
+        self.provider_name = "Cascade"
+        self._active_provider = None
+        
+        # Build provider cascade
+        if settings.gemini_api_key:
+            try:
+                self.providers.append(("Gemini 2.5 Flash", GeminiAnalyst()))
+            except Exception as e:
+                self.logger.warning(f"Gemini init failed: {e}")
+        
+        if settings.deepinfra_api_key:
+            try:
+                self.providers.append(("Qwen3-235B", DeepInfraQwenAnalyst()))
+            except Exception as e:
+                self.logger.warning(f"DeepInfra Qwen init failed: {e}")
+            try:
+                self.providers.append(("DeepSeek V3", DeepInfraDeepSeekAnalyst()))
+            except Exception as e:
+                self.logger.warning(f"DeepInfra DeepSeek init failed: {e}")
+        
+        if not self.providers:
+            raise ValueError("No AI providers configured. Set GEMINI_API_KEY or DEEPINFRA_API_KEY.")
+        
+        self.logger.info(f"Cascade initialized with {len(self.providers)} providers: {[p[0] for p in self.providers]}")
+
+    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
+        last_error = None
+        
+        for name, provider in self.providers:
+            try:
+                self.logger.info(f"Trying provider: {name}")
+                result = await provider.generate_content(system_prompt, user_prompt, max_tokens)
+                self._active_provider = name
+                self.provider_name = name
+                self.logger.info(f"✓ Provider {name} succeeded ({len(result)} chars)")
+                return result
+            except Exception as e:
+                last_error = e
+                self.logger.warning(f"✗ Provider {name} failed: {type(e).__name__}: {str(e)[:200]}")
+                continue
+        
+        # All providers failed
+        raise last_error or ValueError("All AI providers failed")
+
 
 # Factory
 def get_analyst() -> BaseAnalyst:
+    """Get an AI analyst instance.
+    
+    If ai_provider is 'auto' (default), returns CascadingAnalyst which tries
+    all configured providers in order: Gemini → Qwen3 → DeepSeek.
+    
+    Otherwise returns a specific provider by name.
+    """
     provider = settings.ai_provider.lower()
     
-    if provider == "gemini":
+    if provider == "auto":
+        return CascadingAnalyst()
+    elif provider == "gemini":
         return GeminiAnalyst()
     elif provider == "deepinfra":
-        return DeepInfraAnalyst()
+        return DeepInfraQwenAnalyst()
+    elif provider == "deepseek":
+        return DeepInfraDeepSeekAnalyst()
     else:
-        raise ValueError(f"Unknown AI provider: {provider}")
+        # Default to cascade
+        return CascadingAnalyst()
+
