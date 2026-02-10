@@ -193,7 +193,28 @@ export default function CountryView() {
           )}
 
           {analysis && !analyzing && (
-            <MagazineArticle content={analysis.report_text} sourcesUsed={analysis.sources_used} />
+            <div>
+              {/* AI Status Badge */}
+              {analysis.ai_powered === false && (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  background: '#FFF3CD',
+                  border: '1px solid #FFECB5',
+                  borderRadius: 8,
+                  marginBottom: '1rem',
+                  fontSize: '0.8rem',
+                  color: '#664D03',
+                }}>
+                  <strong>⚠ Informe generado con plantilla (IA no disponible)</strong>
+                  {analysis.ai_error && (
+                    <div style={{ marginTop: '4px', fontSize: '0.75rem', opacity: 0.8 }}>
+                      Error: {analysis.ai_error}
+                    </div>
+                  )}
+                </div>
+              )}
+              <MagazineArticle content={analysis.report_text} sourcesUsed={analysis.sources_used} />
+            </div>
           )}
 
           {!analysis && !analyzing && (

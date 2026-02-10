@@ -92,13 +92,19 @@ async def generate_deep_analysis(
         country_code, dominant_domain, risk["score"], domain_scores
     )
 
-    # Fetch real-time news context
-    news_context = await _fetch_news_context(info["name"], country_code)
+    # Fetch real-time news context (non-blocking, never fails the whole pipeline)
+    news_context = ""
+    try:
+        news_context = await _fetch_news_context(info["name"], country_code)
+    except Exception as e:
+        log.warning(f"News fetch skipped: {e}")
 
     # Generate editorial report via AI
+    ai_error = None
     try:
         from backend.intelligence.ai_analyst import get_analyst
         analyst = get_analyst()
+        log.info(f"Using AI provider: {analyst.__class__.__name__} for {country_code}")
         
         report = await analyst.generate_country_report(
             country_code=country_code,
@@ -108,8 +114,13 @@ async def generate_deep_analysis(
             events=[],
             news_context=news_context if news_context else None,
         )
+        log.info(f"AI report generated successfully for {country_code} ({len(report)} chars)")
     except Exception as e:
-        log.error(f"AI Analysis failed: {e}")
+        import traceback
+        ai_error = f"{type(e).__name__}: {str(e)}"
+        log.error(f"AI Analysis failed for {country_code}: {ai_error}")
+        log.error(traceback.format_exc())
+        
         signals = [
             {"domain": d, "title": f"Riesgo elevado en {d}", "severity": "high" if s > 60 else "medium", "trend": "worsening" if s > 50 else "stable"}
             for d, s in domain_scores.items() if s > 40
@@ -131,6 +142,8 @@ async def generate_deep_analysis(
         "scenarios": scenarios,
         "report_text": report,
         "sources_used": bool(news_context),
+        "ai_powered": ai_error is None,
+        "ai_error": ai_error,
     }
 
 
