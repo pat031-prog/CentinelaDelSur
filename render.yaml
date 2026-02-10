@@ -39,14 +39,14 @@ services:
           name: atalaya-backend
           envVar: RENDER_EXTERNAL_URL
 
+  # Redis Service
+  - type: redis
+    name: atalaya-redis
+    plan: free
+    ipAllowList: [] # Only internal access
+
 databases:
   - name: atalaya-db
     plan: free
     databaseName: atalaya_db
     user: atalaya
-
-services:
-  - type: redis
-    name: atalaya-redis
-    plan: free
-    ipAllowList: [] # Only internal access
