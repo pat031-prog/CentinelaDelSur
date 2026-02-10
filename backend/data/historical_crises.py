@@ -267,33 +267,42 @@ def calculate_empirical_multiplier(domain_scores: dict) -> float:
     Calcula multiplicador de interacción basado en correlaciones empíricas
     de crisis históricas LATAM.
     
-    NO es un parámetro hardcodeado — se deriva de datos reales.
+    Falls back to simple heuristic if numpy is unavailable.
     """
-    import numpy as np
-    
-    # Get crisis scores matrix
-    matrix = get_crisis_scores_matrix()
-    
-    if len(matrix) < 5:
-        return 1.2  # Conservative fallback
-    
-    # Calculate correlation matrix during crisis periods
-    correlation_matrix = np.corrcoef(matrix.T)
-    
-    # Extract upper triangle (unique correlations, no diagonal)
-    n = len(DOMAIN_COLUMNS)
-    upper_indices = np.triu_indices(n, k=1)
-    correlations = correlation_matrix[upper_indices]
-    
-    # Mean absolute correlation
-    mean_correlation = np.abs(correlations).mean()
-    
-    # Adjustment factor based on current stress level
-    current_values = [domain_scores.get(d, 30) for d in DOMAIN_COLUMNS]
-    current_stress = np.mean(current_values)
-    adjustment_factor = 0.5 + (current_stress / 200)  # 0.5 to 1.0
-    
-    # Final multiplier (capped at 1.5)
-    multiplier = 1 + (mean_correlation * adjustment_factor)
-    
-    return min(round(multiplier, 3), 1.5)
+    try:
+        import numpy as np
+        
+        # Get crisis scores matrix
+        matrix = get_crisis_scores_matrix()
+        
+        if len(matrix) < 5:
+            return 1.2  # Conservative fallback
+        
+        # Calculate correlation matrix during crisis periods
+        correlation_matrix = np.corrcoef(matrix.T)
+        
+        # Extract upper triangle (unique correlations, no diagonal)
+        n = len(DOMAIN_COLUMNS)
+        upper_indices = np.triu_indices(n, k=1)
+        correlations = correlation_matrix[upper_indices]
+        
+        # Mean absolute correlation
+        mean_correlation = float(np.abs(correlations).mean())
+        
+        # Adjustment factor based on current stress level
+        current_values = [domain_scores.get(d, 30) for d in DOMAIN_COLUMNS]
+        current_stress = float(np.mean(current_values))
+        adjustment_factor = 0.5 + (current_stress / 200)  # 0.5 to 1.0
+        
+        # Final multiplier (capped at 1.5)
+        multiplier = 1 + (mean_correlation * adjustment_factor)
+        
+        return min(round(multiplier, 3), 1.5)
+    except Exception:
+        # Fallback: simple elevated-domains heuristic (no numpy needed)
+        values = [domain_scores.get(d, 30) for d in DOMAIN_COLUMNS]
+        elevated = sum(1 for v in values if v > 50)
+        if elevated >= 3:
+            return 1.0 + (elevated - 2) * 0.1
+        return 1.0
+
