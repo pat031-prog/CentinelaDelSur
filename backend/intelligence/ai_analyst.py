@@ -293,7 +293,7 @@ Mínimo 1500 palabras. Prosa editorial, no listas."""
 
 
 class GeminiAnalyst(BaseAnalyst):
-    """Google Gemini implementation with Google Search Grounding & JSON Mode."""
+    """Google Gemini implementation with Native Search Grounding."""
     
     def __init__(self):
         super().__init__()
@@ -301,8 +301,10 @@ class GeminiAnalyst(BaseAnalyst):
             raise ValueError("GEMINI_API_KEY not configured")
         
         genai.configure(api_key=settings.gemini_api_key)
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.provider_name = "Gemini 2.5 Flash (Search Enabled)"
         
-        # Configure Google Search Tool
+        # Configuración de la herramienta de búsqueda
         self.tools = [
             {"google_search_retrieval": {
                 "dynamic_retrieval_config": {
@@ -311,79 +313,176 @@ class GeminiAnalyst(BaseAnalyst):
                 }
             }}
         ]
-        
-        # Use best available model: gemini-2.5-flash
-        self.model = genai.GenerativeModel('gemini-2.5-flash', tools=self.tools)
-        self.json_model = genai.GenerativeModel('gemini-2.5-flash') # No tools for JSON tasks to avoid conflicts
-        self.provider_name = "Gemini 2.5 Flash (Grounded)"
 
-    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
-        # Default generation (uses Search if dynamic threshold is met)
-        return await self._generate(self.model, system_prompt, user_prompt, max_tokens, temperature=0.3)
-
-    async def research_topic(self, query: str, search_modifiers: str = "") -> str:
+    async def perform_research(self, query: str) -> str:
+        """Método específico para investigar datos duros en tiempo real."""
+        research_prompt = f"""
+        Objetivo: Encontrar datos EXACTOS y RECIENTES para: {query}
+        
+        Instrucciones:
+        1. Busca fuentes oficiales y medios financieros confiables.
+        2. Extrae cifras exactas (fechas, porcentajes, montos).
+        3. Si hay datos contradictorios, cita ambos.
+        
+        Formato de salida: Resumen factual con citas.
         """
-        Conduct grounded research using Google Search.
-        Low temperature for factual accuracy.
-        """
-        system_prompt = "You are a research librarian. Gather factual information from credible sources."
-        user_prompt = f"""RESEARCH QUERY: {query}
-        
-        CONTEXT MODIFIERS: {search_modifiers}
-        
-        TASK:
-        1. Search for the most relevant, up-to-date information from the specified sources.
-        2. Provide a detailed summary of facts, numbers, dates, and direct quotes.
-        3. MANDATORY: Cite authoritative URLs for every key fact.
-        4. Focus on official statements, economic data, and major political events.
-        """
-        
-        # Force low temp for facts
-        return await self._generate(self.model, system_prompt, user_prompt, max_tokens=8000, temperature=0.1)
-
-    async def identify_tipping_points(self, country_code: str, country_name: str, current_state: Dict[str, Any]) -> List[Dict[str, Any]]:
-        # Use JSON mode model
-        prompt = f"""Analiza el estado actual de {country_name} ({country_code}) e identifica los 3-5 PUNTOS DE INFLEXIÓN más críticos.
-        Estado actual: {json.dumps(current_state, indent=2, default=str)}
-        
-        Return a JSON array of objects with keys: event, probability, impact_if_occurs, impact_if_not, key_date, domain, actors, cascade_risk."""
         
         try:
-            response = await self._generate(
-                self.json_model, 
-                SYSTEM_PROMPT, 
-                prompt, 
-                max_tokens=4000, 
-                temperature=0.4,
-                mime_type="application/json"
+            # Usamos temperatura 0.3 para precisión
+            response = self.model.generate_content(
+                research_prompt,
+                tools=self.tools,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.3
+                )
             )
-            return json.loads(response)
+            return response.text
         except Exception as e:
-            self.logger.error(f"JSON parsing/generation failed: {e}")
-            return []
+            self.logger.error(f"Research failed: {e}")
+            return "No se pudieron obtener datos recientes."
 
-    async def _generate(self, model, system, user, max_tokens, temperature, mime_type=None):
-        import asyncio
-        full_prompt = f"{system}\n\n{user}"
-        max_retries = 3
+    async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
+        # Inyectamos una instrucción de grounding en el prompt
+        grounding_instruction = "\nIMPORTANTE: Usa la herramienta de búsqueda integrada para verificar CADA dato reciente (tipo de cambio, inflación, conflictos) antes de escribir. No inventes que 'no hay datos'."
         
-        generation_config = genai.types.GenerationConfig(
-            temperature=temperature,
-            max_output_tokens=max_tokens,
-            response_mime_type=mime_type
-        )
-
+        full_prompt = f"{system_prompt}\n{grounding_instruction}\n\n{user_prompt}"
+        
+        # Lógica de reintento existente...
+        import asyncio
+        max_retries = 3
         for attempt in range(max_retries + 1):
             try:
-                response = model.generate_content(full_prompt, generation_config=generation_config)
+                response = self.model.generate_content(
+                    full_prompt,
+                    tools=self.tools,  # <--- AQUÍ ACTIVAMOS LA BÚSQUEDA
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.7,
+                        max_output_tokens=max_tokens,
+                    )
+                )
+                
+                # Verificar si la respuesta fue bloqueada o está vacía
+                if not response.parts:
+                    return "Error: La IA no generó contenido (posible bloqueo de seguridad)."
+                    
                 return response.text
             except Exception as e:
-                error_str = str(e)
-                if ("429" in error_str or "ResourceExhausted" in error_str) and attempt < max_retries:
+                self.logger.warning(f"Gemini error: {e}")
+                if attempt < max_retries:
                     wait_time = 2 ** (attempt + 1)
                     await asyncio.sleep(wait_time)
                     continue
-                raise
+                else:
+                    self.logger.error(f"Gemini critical error after retries: {e}")
+        
+        return "Error crítico: Falló la generación después de varios intentos."
+
+    # Mantenemos el método generate_country_report pero lo mejoramos
+    async def generate_country_report(
+        self,
+        country_code: str,
+        country_name: str,
+        risk_scores: Dict[str, Any],
+        indicators: Dict[str, Any],
+        events: List[Dict[str, Any]],
+        historical_analogs: Optional[List[Dict]] = None,
+        news_context: Optional[str] = None,
+    ) -> str:
+        
+        # PASO 1: INVESTIGACIÓN ACTIVA (Nuevo)
+        # Antes de escribir, mandamos a investigar los datos críticos
+        print(f"🕵️  Investigando datos en tiempo real para {country_name}...")
+        live_data = await self.perform_research(
+            f"Situación actual {country_name} economía política crisis {self._get_date()}. Dolar blue, riesgo país, inflación último mes, protestas recientes."
+        )
+        
+        # PASO 2: Construcción del contexto enriquecido
+        context = self._build_context(
+            country_code, country_name, risk_scores, indicators, events, historical_analogs
+        )
+        
+        # Añadimos los datos "live" al prompt
+        real_time_section = f"""
+DATOS EN TIEMPO REAL (GOOGLE SEARCH):
+{live_data}
+"""
+        
+        prompt = f"""Escribe un ARTÍCULO DE INTELIGENCIA EDITORIAL completo sobre {country_name} ({country_code}).
+        
+DATOS ANALÍTICOS SISTÉMICOS:
+{context}
+
+INVESTIGACIÓN DE MERCADO EN TIEMPO REAL (USAR COMO FUENTE PRIMARIA):
+{real_time_section}
+
+{news_context if news_context else ""}
+
+ESTRUCTURA DEL ARTÍCULO (en Markdown):
+
+# {country_name}: [Titular editorial impactante que capture la situación actual]
+
+*Por ATALAYA Intelligence | {self._get_date()} | Análisis de Riesgo Soberano*
+
+## Resumen Ejecutivo
+
+[3-4 párrafos que sinteticen la situación actual, el nivel de riesgo, y la tesis central. 
+Debe leerse como la entrada de un artículo de The Economist — enganchando al lector con 
+la urgencia y relevancia del tema.]
+
+## El Panorama Actual
+
+[Descripción detallada del contexto político, económico y social actual. 
+Menciona actores clave (presidentes, ministros, líderes de oposición), 
+cifras económicas (inflación, PIB, deuda), y eventos recientes.
+Mínimo 3-4 párrafos sustanciales. Cita fuentes.]
+
+## Anatomía del Riesgo
+
+[Análisis técnico profundo del Índice de Fragilidad. Explica qué dominios están 
+más comprometidos y por qué. Usa los datos de risk_scores para fundamentar.
+Conecta los dominios entre sí: cómo la crisis política alimenta la económica, etc.]
+
+## Señales de Alerta
+
+[¿Qué indicadores tempranos están encendiéndose? Describe eventos específicos 
+recientes que actúan como precursores. Para cada señal, explica su significado 
+estructural — no solo qué pasó, sino qué implica para el futuro.]
+
+## Escenarios a 90 Días
+
+### Escenario Base: [Nombre descriptivo]
+[2-3 párrafos describiendo la trayectoria más probable]
+
+### Escenario de Riesgo: [Nombre descriptivo]  
+[2-3 párrafos describiendo qué pasa si los factores de riesgo se materializan]
+
+### Cisne Negro: [Nombre descriptivo]
+[1-2 párrafos sobre el evento improbable pero catastrófico]
+
+## Precedentes Históricos
+
+[Comparación con crisis pasadas en la región. ¿Qué patrones se repiten? 
+¿Qué lecciones aplican? Sé específico con fechas y resultados.]
+
+## Recomendaciones para Observadores
+
+[Para analistas, inversores, y tomadores de decisiones: ¿qué vigilar? 
+¿Qué acciones tomar? ¿Cuáles son las fechas clave próximas?]
+
+---
+
+*Las opiniones expresadas representan el análisis de ATALAYA Intelligence y no constituyen asesoramiento financiero o político. Fuentes consultadas incluyen reportes de organismos internacionales, medios especializados y bases de datos propietarias.*
+
+REGLAS:
+- El artículo debe ser LARGO y SUSTANCIAL (mínimo 2000 palabras).
+- Cada sección debe tener PÁRRAFOS COMPLETOS, no listas.
+- Incluye cifras, datos y nombres específicos.
+- Cita fuentes entre corchetes: [Fuente: nombre, fecha].
+- El titular debe ser periodístico y provocador.
+- USA ESPAÑOL LATINOAMERICANO.
+- NO empieces con "A continuación..." o "En este informe...". Entra DIRECTO al contenido."""
+
+        return await self.generate_content(SYSTEM_PROMPT, prompt, max_tokens=12000)
 
 
 class DeepInfraQwenAnalyst(BaseAnalyst):

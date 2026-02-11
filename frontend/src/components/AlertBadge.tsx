@@ -1,11 +1,11 @@
 import { AlertLevel } from '../types'
 
 const COLORS: Record<AlertLevel, string> = {
-  green: 'var(--risk-green)',
-  yellow: 'var(--risk-yellow)',
-  orange: 'var(--risk-orange)',
-  red: 'var(--risk-red)',
-  black: 'var(--risk-black)',
+  green: 'var(--risk-low)',
+  yellow: 'var(--risk-medium)',
+  orange: 'var(--risk-high)',
+  red: 'var(--risk-critical)',
+  black: 'var(--text-primary)',
 }
 
 const LABELS: Record<AlertLevel, string> = {
@@ -31,27 +31,25 @@ export default function AlertBadge({ level, size = 'md', showLabel = true }: Pro
     <div style={{
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '0.5rem',
-      padding: size === 'sm' ? '2px 8px' : '4px 12px',
+      gap: '0.35rem',
+      padding: size === 'sm' ? '2px 6px' : '3px 10px',
       border: `1px solid ${color}`,
+      borderRadius: 'var(--radius-xs)',
       background: 'transparent',
       color: color,
-      fontFamily: 'var(--font-mono)',
-      fontSize: size === 'sm' ? '0.65rem' : '0.75rem',
+      fontFamily: 'var(--font-data)',
+      fontSize: size === 'sm' ? '0.6rem' : '0.65rem',
       fontWeight: 700,
       textTransform: 'uppercase',
-      letterSpacing: '0.05em',
-      borderRadius: 0 // Explicit square
+      letterSpacing: '0.03em',
     }}>
       <div style={{
-        width: size === 'sm' ? 6 : 8,
-        height: size === 'sm' ? 6 : 8,
+        width: size === 'sm' ? 5 : 6,
+        height: size === 'sm' ? 5 : 6,
         background: color,
-        borderRadius: 0 // Square dot
+        borderRadius: '50%'
       }} />
-      {showLabel && (
-        <span>{LABELS[level]}</span>
-      )}
+      {showLabel && <span>{LABELS[level]}</span>}
     </div>
   )
 }

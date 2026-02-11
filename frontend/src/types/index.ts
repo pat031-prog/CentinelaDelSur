@@ -11,6 +11,7 @@ export interface Country {
   capital: string
   population: number
   gdp_usd: number
+  timezone?: string
   current_risk_score: number
   current_risk_level: AlertLevel
 }

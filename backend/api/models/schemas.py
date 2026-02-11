@@ -52,6 +52,7 @@ class CountryBase(BaseModel):
     capital: Optional[str] = None
     population: Optional[int] = None
     gdp_usd: Optional[int] = None
+    timezone: Optional[str] = None
 
 
 class CountryResponse(CountryBase):

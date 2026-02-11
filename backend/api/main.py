@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api.routes import analysis, countries, domains, alerts
+from backend.api.routes import analysis, countries, domains, alerts, market
 from backend.api.models.database import init_db
 from backend.utils.cache import cache
 from backend.utils.config import settings
@@ -54,6 +54,7 @@ app.include_router(countries.router, prefix="/api/v1", tags=["Countries"])
 app.include_router(analysis.router, prefix="/api/v1", tags=["Analysis"])
 app.include_router(domains.router, prefix="/api/v1", tags=["Domains"])
 app.include_router(alerts.router, prefix="/api/v1", tags=["Alerts"])
+app.include_router(market.router, prefix="/api/v1", tags=["Market"])
 
 
 @app.get("/")

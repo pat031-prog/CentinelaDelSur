@@ -1,34 +1,32 @@
-/* ===== BRUTALIST RESPONSIVE OVERRIDES ===== */
+/* ===== RESPONSIVE OVERRIDES ===== */
 
-/* Default: Bottom Nav is hidden */
 .bottom-nav {
     display: none;
 }
 
 @media (max-width: 768px) {
 
-    /* 1. HIDE SIDEBAR */
+    /* HIDE SIDEBAR */
     .sidebar {
         display: none !important;
     }
 
-    /* 2. RESET MAIN MARGINS */
+    /* RESET MAIN */
     .main-content {
         margin-left: 0 !important;
-        padding-bottom: 80px !important;
-        /* Space for bottom nav */
+        padding-bottom: 72px !important;
     }
 
-    /* 3. SHOW BOTTOM NAV */
+    /* SHOW BOTTOM NAV */
     .bottom-nav {
         display: flex;
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        height: 60px;
-        background: var(--bg-card);
-        border-top: var(--border-width) solid var(--border-color);
+        height: 56px;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
         justify-content: space-around;
         align-items: center;
         z-index: 1000;
@@ -41,54 +39,61 @@
         align-items: center;
         justify-content: center;
         text-decoration: none;
-        color: var(--text-secondary);
-        font-family: var(--font-mono);
-        font-size: 0.65rem;
+        color: var(--text-muted);
+        font-family: var(--font-body);
+        font-size: 0.55rem;
+        font-weight: 600;
         text-transform: uppercase;
-        gap: 4px;
+        letter-spacing: 0.06em;
+        gap: 3px;
         flex: 1;
         height: 100%;
-        border-right: 1px solid var(--border-light);
     }
 
     .bottom-nav .nav-item.active {
-        background: var(--text-primary);
-        color: var(--text-inverse);
+        background: var(--accent);
+        color: #FFF;
     }
 
-    /* 4. HEADER ADJUSTMENTS */
+    /* HEADER */
     header {
-        padding: 0.75rem 1rem !important;
+        padding: 0 1rem !important;
+        height: 48px !important;
     }
 
     header input {
         display: none;
-        /* Hide search on mobile */
     }
 
-    /* 5. GRID STACKING */
-    .brutalist-grid {
+    /* GRID STACKING */
+    .grid-dashboard {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .grid-card.span-2,
+    .grid-card.span-3,
+    .grid-card.span-4 {
+        grid-column: span 2 !important;
+    }
+
+    /* TYPOGRAPHY */
+    .t-xl {
+        font-size: 2.2rem !important;
+    }
+
+    .t-lg {
+        font-size: 1.3rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid-dashboard {
         grid-template-columns: 1fr !important;
-        border-left: none;
-        /* Full width */
     }
 
-    .grid-cell {
-        border-right: none;
-        /* Full width */
-    }
-
-    .grid-cell.double-width,
-    .grid-cell.full-width {
+    .grid-card.span-2,
+    .grid-card.span-3,
+    .grid-card.span-4 {
         grid-column: span 1 !important;
-    }
-
-    /* 6. TYPOGRAPHY SCALING */
-    .text-xl {
-        font-size: 2.5rem !important;
-    }
-
-    .text-lg {
-        font-size: 1.5rem !important;
     }
 }

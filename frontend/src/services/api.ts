@@ -68,4 +68,10 @@ export const api = {
     const qs = searchParams.toString()
     return fetchApi<any[]>(`/historical/crises${qs ? `?${qs}` : ''}`)
   },
+
+  getMarketFX: () =>
+    fetchApi<any>('/market/fx'),
+
+  getMarketCommodities: () =>
+    fetchApi<any>('/market/commodities'),
 }
