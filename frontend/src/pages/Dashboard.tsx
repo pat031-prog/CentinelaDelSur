@@ -13,10 +13,12 @@ export default function Dashboard() {
     async function load() {
       try {
         const [c, a] = await Promise.all([api.getCountries(), api.getAlerts()])
-        setCountries(c)
-        setAlerts(a.alerts || [])
+        setCountries(c || [])
+        setAlerts(a?.alerts || [])
       } catch (e) {
-        console.error(e)
+        console.error("Dashboard load failed:", e)
+        setCountries([])
+        setAlerts([])
       } finally {
         setLoading(false)
       }

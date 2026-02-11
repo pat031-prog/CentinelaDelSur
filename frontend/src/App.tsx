@@ -3,6 +3,7 @@ import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import CountryView from './pages/CountryView'
 import RegionalView from './pages/RegionalView'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   const location = useLocation()
@@ -56,6 +57,22 @@ function App() {
         </div>
       </aside>
 
+      {/* ===== MOBILE BOTTOM NAV ===== */}
+      <nav className="bottom-nav">
+        <Link to="/" className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}>
+          <span>⊞</span>
+          <span>Situación</span>
+        </Link>
+        <Link to="/regional" className={`nav-item ${location.pathname === '/regional' ? 'active' : ''}`}>
+          <span>Map</span>
+          <span>Regional</span>
+        </Link>
+        <Link to="#" className="nav-item disabled" style={{ opacity: 0.5 }}>
+          <span>≣</span>
+          <span>Reportes</span>
+        </Link>
+      </nav>
+
       {/* ===== MAIN ===== */}
       <main className="main-content" style={{
         marginLeft: 'var(--sidebar-width)',
@@ -99,11 +116,13 @@ function App() {
 
         {/* CONTENT */}
         <div style={{ flex: 1, padding: '6px' }}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/country/:code" element={<CountryView />} />
-            <Route path="/regional" element={<RegionalView />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/country/:code" element={<CountryView />} />
+              <Route path="/regional" element={<RegionalView />} />
+            </Routes>
+          </ErrorBoundary>
         </div>
       </main>
 

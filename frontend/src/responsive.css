@@ -4,6 +4,11 @@
     display: none;
 }
 
+/* Prevent ticker from causing scroll */
+body {
+    overflow-x: hidden;
+}
+
 @media (max-width: 768px) {
 
     /* HIDE SIDEBAR */
