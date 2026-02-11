@@ -370,8 +370,9 @@ REGLAS INQUEBRANTABLES:
 2. CADA sección debe respetar SU límite de palabras
 3. CADA sección necesita al menos UNA frase con edge/punch
 4. NO repitas la misma idea/dato/frase en diferentes secciones
-5. Usa DATOS REALES del análisis — cita fuentes: [Fuente: organización, fecha]
-6. Sin especulación no sustentada por datos
+5. Usa DATOS REALES del análisis — cita fuentes explícitamente: [Fuente: INDEC], [Fuente: La Nación].
+6. SI HAY LINKS EN EL CONTEXTO, INCLÚYELOS en el texto (ej: "Según reporte oficial (link)...").
+7. Sin especulación no sustentada por datos de las fuentes provistas.
 7. El multiplicador de interacción DEBE estar explicado en Anatomía del Riesgo
 """
 

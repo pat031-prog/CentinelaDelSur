@@ -81,56 +81,83 @@ async def fetch_market_data(country_code: str) -> Dict[str, Any]:
 
 # --- SEARCH FUNCTIONS ---
 
-async def search_ddg_category(query: str, label: str, limit: int = 3) -> List[str]:
-    """Run a specific DDG search and format results with a label."""
-    results = []
+# --- SEARCH FUNCTIONS (HTML SCRAPER) ---
+
+async def search_ddg_html(query: str, label: str, limit: int = 3) -> List[str]:
+    """
+    Robust scraper for html.duckduckgo.com.
+    Bypasses library limitations (date parsing) and JS blockers.
+    """
+    results_text = []
+    url = "https://html.duckduckgo.com/html/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Referer": "https://html.duckduckgo.com/"
+    }
+    data = {"q": query}
+    
     try:
-        from duckduckgo_search import DDGS
+        def _scrape_sync():
+            # httpx sync inside thread to avoid async context issues if strict
+            import httpx
+            with httpx.Client(timeout=10.0, follow_redirects=True) as client:
+                resp = client.post(url, data=data, headers=headers)
+                if resp.status_code == 200:
+                    return resp.content
+            return None
+
+        content = await asyncio.to_thread(_scrape_sync)
         
-        def _search():
-            with DDGS() as ddgs:
-                return list(ddgs.text(query, region="wt-wt", safesearch="off", max_results=limit))
-        
-        raw = await asyncio.to_thread(_search)
-        for r in raw:
-            title = r.get("title", "No Title")
-            snippet = r.get("body", "")
-            results.append(f"- [{label}] **{title}**: \"{snippet}\"")
-            
+        if content:
+            soup = BeautifulSoup(content, "html.parser")
+            # Select result blocks
+            results = soup.select(".result")
+            count = 0
+            for r in results:
+                if count >= limit: break
+                
+                title_elem = r.select_one(".result__title .result__a")
+                snippet_elem = r.select_one(".result__snippet")
+                
+                if title_elem:
+                    title = title_elem.get_text(strip=True)
+                    link = title_elem.get('href', '#')
+                    # snippet is optional
+                    snippet = snippet_elem.get_text(strip=True) if snippet_elem else ""
+                    
+                    results_text.append(f"- [{label}] **{title}**: \"{snippet}\" [Link: {link}]")
+                    count += 1
+                    
     except Exception as e:
-        log.warning(f"DDG Search '{query}' failed: {e}")
-    return results
+        log.warning(f"DDG HTML Search '{query}' failed: {e}")
+        
+    return results_text
 
 async def fetch_comprehensive_search(country_name: str, country_code: str) -> List[str]:
     """
-    Orchestrate parallel searches:
-    1. General News (Recent)
-    2. Official Sources (site:.gov...)
-    3. Major Media (site:outlet...)
+    Orchestrate parallel searches using the robust HTML scraper.
     """
     targets = COUNTRY_RESEARCH_TARGETS.get(country_code, COUNTRY_RESEARCH_TARGETS["default"])
     
     tasks = []
     
-    # 1. General Crisis/Economy Context
-    tasks.append(search_ddg_category(
-        f"{country_name} crisis economía inflación política", 
+    # 1. General Context (Expanded query)
+    tasks.append(search_ddg_html(
+        f"{country_name} crisis economía inflación 2026", 
         "GENERAL"
     ))
     
-    # 2. Official Sources Search
+    # 2. Official Sources
     if targets["official"]:
         sites = " OR ".join([f"site:{d}" for d in targets["official"]])
-        # Query: site:gov.ar (inflación OR reservas OR comunicado)
-        q_official = f"({sites}) (inflación OR reservas OR comunicado OR decreto)"
-        tasks.append(search_ddg_category(q_official, "OFFICIAL SOURCE", limit=4))
+        q_official = f"({sites}) (inflación OR reservas OR comunicado) {country_name}"
+        tasks.append(search_ddg_html(q_official, "OFFICIAL", limit=3))
         
-    # 3. Major Media Search
+    # 3. Regional Media
     if targets["media"]:
-        # Pick top 2 for specific query
         sites_media = " OR ".join([f"site:{d}" for d in targets["media"][:3]])
-        q_media = f"({sites_media}) (economía OR política)"
-        tasks.append(search_ddg_category(q_media, "REGIONAL MEDIA", limit=4))
+        q_media = f"({sites_media}) (economía OR política) {country_name}"
+        tasks.append(search_ddg_html(q_media, "MEDIA", limit=3))
 
     # Execute all
     results_list = await asyncio.gather(*tasks)
@@ -140,10 +167,10 @@ async def fetch_comprehensive_search(country_name: str, country_code: str) -> Li
     for r in results_list:
         flat_results.extend(r)
         
-    # Fallback if empty
+    # Fallback if empty (try simplified query)
     if not flat_results:
-        log.warning("All DDG searches failed. Attempting Google RSS fallback.")
-        return await fetch_google_news_fallback(country_name)
+        log.warning("Primary DDG searches yielded no results. Trying fallback query.")
+        flat_results.extend(await search_ddg_html(f"{country_name} news", "FALLBACK"))
         
     return flat_results
 
