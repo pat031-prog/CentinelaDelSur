@@ -2,23 +2,38 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../services/api'
 import { Country, Alert } from '../types'
-import MarketTicker from '../components/MarketTicker'
+import GeopoliticsRadar from '../components/GeopoliticsRadar'
+import CommodityTicker from '../components/CommodityTicker'
+import TechSingularityPanel from '../components/TechSingularityPanel'
+import { Activity, Globe, AlertTriangle, ShieldAlert } from 'lucide-react'
+
+import BootSequence from '../components/BootSequence'
 
 export default function Dashboard() {
   const [countries, setCountries] = useState<Country[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
+  const [booting, setBooting] = useState(true) // New Boot State
 
+  // War Room Focus State
+  const [selectedCode, setSelectedCode] = useState<string>('ARG') // Default to ARG
+  const [deepData, setDeepData] = useState<any>(null)
+  const [scanning, setScanning] = useState(false)
+
+  // Initial Load
   useEffect(() => {
     async function load() {
       try {
         const [c, a] = await Promise.all([api.getCountries(), api.getAlerts()])
         setCountries(c || [])
         setAlerts(a?.alerts || [])
+        if (c && c.length > 0) {
+          // Find most critical or default to ARG
+          const critical = c.find((x: Country) => x.current_risk_score >= 70)
+          setSelectedCode(critical ? critical.code : 'ARG')
+        }
       } catch (e) {
         console.error("Dashboard load failed:", e)
-        setCountries([])
-        setAlerts([])
       } finally {
         setLoading(false)
       }
@@ -26,160 +41,177 @@ export default function Dashboard() {
     load()
   }, [])
 
-  if (loading) return (
-    <div style={{ padding: '3rem', color: 'var(--text-muted)' }}>
-      Cargando sistema...
-    </div>
-  )
+  // Deep Scan on Selection
+  useEffect(() => {
+    if (!selectedCode) return
 
-  const critical = countries.filter(c => c.current_risk_score >= 70)
-  const watchlist = countries.filter(c => c.current_risk_score >= 40 && c.current_risk_score < 70)
-  const avgRisk = countries.length
-    ? countries.reduce((a, c) => a + c.current_risk_score, 0) / countries.length
-    : 0
+    async function scan() {
+      setScanning(true)
+      setDeepData(null)
+      try {
+        // Parallel fetch for speed: standard data + deep analysis
+        // Note: In a real scenario, we might want to trigger deep analysis only on demand 
+        // to save tokens, but for the "War Room" feel, we do it automatically.
+        const data = await api.analyzeCountry(selectedCode, 'deep')
+        setDeepData(data)
+      } catch (e) {
+        console.error("Deep scan failed:", e)
+      } finally {
+        setScanning(false)
+      }
+    }
+    scan()
+  }, [selectedCode])
+
+  // RENDER BOOT SEQUENCE
+  if (booting) return <BootSequence onComplete={() => setBooting(false)} />
+
+  if (loading) return null // Should be handled by boot sequence or just hidden behind it
+
+  const selectedCountry = countries.find(c => c.code === selectedCode)
+  const avgRisk = countries.length ? countries.reduce((a, c) => a + c.current_risk_score, 0) / countries.length : 0
 
   return (
-    <div className="fade-in">
+    <div className="fade-in" style={{ minHeight: '100vh', position: 'relative' }}>
+      {/* CRT Overlay Effect */}
+      <div className="crt-overlay" style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
 
-      {/* ===== TOP ROW: Hero + Metrics ===== */}
-      <div className="grid-dashboard">
+      {/* Background Particles (CSS only for now) */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: -1, background: 'radial-gradient(circle at 50% 50%, #1a1f35 0%, #0a0f1e 100%)' }} />
 
-        {/* HERO CARD */}
-        <div className="grid-card span-2" style={{ padding: '2rem' }}>
-          <div className="t-label" style={{ marginBottom: '0.75rem' }}>Sala de Situación</div>
-          <h1 className="t-display t-xl">Panel de<br />Control</h1>
+      {/* ===== TOP BAR (ZONE 1) ===== */}
+      <header className="glass-panel" style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '1rem 2rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        <div>
+          <div className="t-label neon-text" style={{ fontSize: '0.7rem' }}>SISTEMA DE VIGILANCIA HEMISFÉRICA</div>
+          <h1 className="t-display t-lg" style={{ margin: 0, textShadow: '0 0 10px rgba(255,255,255,0.1)' }}>ATALAYA <span style={{ color: 'var(--accent)' }}>WAR ROOM</span></h1>
         </div>
-
-        {/* DESCRIPTION */}
-        <div className="grid-card span-2" style={{ display: 'flex', alignItems: 'flex-end', padding: '2rem' }}>
-          <p style={{ fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
-            Monitoreo en tiempo real de <strong style={{ color: 'var(--text-primary)' }}>{countries.length}</strong> entidades
-            soberanas. Ciclo de inteligencia activo.
-          </p>
+        <div style={{ display: 'flex', gap: '2rem' }}>
+          <MetricWidget label="ENTIDADES" value={countries.length} />
+          <MetricWidget label="RIESGO REGIONAL" value={avgRisk.toFixed(1)} color={avgRisk > 50 ? 'red' : 'blue'} />
+          <MetricWidget label="ALERTA DEFCON" value="4" color="orange" />
         </div>
+      </header>
 
-        {/* METRIC CARDS */}
-        <MetricCard label="Entidades" value={String(countries.length)} />
-        <MetricCard label="Críticos" value={String(critical.length)} color="orange" />
-        <MetricCard label="Vigilancia" value={String(watchlist.length)} color="sage" />
-        <MetricCard label="Índice Regional" value={avgRisk.toFixed(1)} />
-      </div>
+      {/* ===== MAIN GRID ===== */}
+      <div className="grid-dashboard-organic">
 
-      {/* ===== MAIN BODY: Matrix + Cable ===== */}
-      <MarketTicker />
-      <div className="grid-dashboard" style={{ marginTop: '0' }}>
-
-        {/* RISK MATRIX */}
-        <div className="grid-card span-3" style={{ padding: 0, overflow: 'hidden' }}>
-          {/* Header */}
-          <div style={{
-            padding: '1rem 1.5rem',
-            borderBottom: '1px solid var(--border-color)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span className="t-display" style={{ fontSize: '1.1rem' }}>Matriz de Riesgo</span>
-            <span className="t-label">{countries.length} entidades</span>
+        {/* ZONE 2: NAVIGATION / RISK MATRIX (LEFT) */}
+        <div className="zone-left glass-panel" style={{ height: 'calc(100vh - 180px)', overflowY: 'auto' }}>
+          <div style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="t-label">ESTACIONES</div>
           </div>
-
-          {/* Table Header */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '60px 1fr 80px 120px',
-            padding: '0.6rem 1.5rem',
-            fontSize: '0.65rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--text-dim)',
-            borderBottom: '1px solid var(--border-light)',
-          }}>
-            <div>ISO</div>
-            <div>Entidad</div>
-            <div style={{ textAlign: 'center' }}>Score</div>
-            <div style={{ textAlign: 'right' }}>Estado</div>
-          </div>
-
-          {/* Rows */}
-          {countries.map(c => (
-            <Link key={c.code} to={`/country/${c.code}`} style={{
-              display: 'grid',
-              gridTemplateColumns: '60px 1fr 80px 120px',
-              padding: '0.85rem 1.5rem',
-              borderBottom: '1px solid var(--border-light)',
-              alignItems: 'center',
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'background 0.1s',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-card-hover)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          {countries.sort((a, b) => b.current_risk_score - a.current_risk_score).map(c => (
+            <div key={c.code}
+              onClick={() => setSelectedCode(c.code)}
+              style={{
+                padding: '0.75rem 1rem',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                background: selectedCode === c.code ? 'rgba(0, 170, 255, 0.1)' : 'transparent',
+                borderLeft: selectedCode === c.code ? '3px solid var(--accent)' : '3px solid transparent',
+                cursor: 'pointer',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                transition: 'all 0.2s'
+              }}
+              className="hover-bg"
             >
-              <div style={{ fontFamily: 'var(--font-data)', fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                {c.code}
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{c.name}</div>
+                <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>{c.code}</div>
               </div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{c.name}</div>
               <div style={{
-                textAlign: 'center',
-                fontFamily: 'var(--font-data)',
                 fontWeight: 700,
-                fontSize: '1rem',
-                color: scoreColor(c.current_risk_score)
+                color: c.current_risk_score >= 70 ? 'var(--risk-critical)' : 'var(--text-secondary)'
               }}>
                 {c.current_risk_score.toFixed(0)}
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <RiskPill level={c.current_risk_level} />
-              </div>
-            </Link>
+            </div>
           ))}
         </div>
 
-        {/* NEWS CABLE */}
-        <div className="grid-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{
-            padding: '1rem 1.25rem',
-            borderBottom: '1px solid var(--border-color)',
-          }}>
-            <span className="t-display" style={{ fontSize: '1.1rem' }}>Cable</span>
-          </div>
+        {/* ZONE 3: FOCUS / DEEP ANALYSIS (CENTER) */}
+        <div className="zone-center" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-          <div>
-            {alerts.slice(0, 8).map(a => (
-              <div key={a.id} style={{
-                padding: '1rem 1.25rem',
-                borderBottom: '1px solid var(--border-light)',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                  <span style={{
-                    fontFamily: 'var(--font-data)',
-                    fontSize: '0.6rem',
-                    fontWeight: 700,
-                    background: 'var(--accent)',
-                    color: '#FFF',
-                    padding: '1px 6px',
-                    borderRadius: '2px'
-                  }}>{a.country_code}</span>
-                  <span style={{ fontFamily: 'var(--font-data)', fontSize: '0.6rem', color: 'var(--text-dim)' }}>
-                    {new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+          {/* 3.1: COMMODITY TICKER */}
+          {deepData?.key_commodities && (
+            <CommodityTicker commodities={deepData.key_commodities} />
+          )}
+
+          {/* 3.2: MAIN ANALYSIS PANEL */}
+          <div className="glass-panel" style={{ flex: 1, padding: '2rem', position: 'relative' }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <div>
+                <div className="t-label" style={{ color: 'var(--accent)' }}>OBJETIVO ACTIVO</div>
+                <h2 className="t-display t-xl">{selectedCountry?.name.toUpperCase()}</h2>
+              </div>
+              {scanning && <div className="pulse-critical t-label" style={{ color: 'var(--accent)' }}>ESCANEANDO VECTORES...</div>}
+            </div>
+
+            {/* Content Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+
+              {/* LEFT COL: RADAR & TECH */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {deepData?.alignment_score ? (
+                  <GeopoliticsRadar
+                    score={deepData.alignment_score.usa_china_axis}
+                    description={deepData.alignment_score.description}
+                  />
+                ) : (
+                  <div className="glass-panel" style={{ height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
+                    {scanning ? "Sincronizando satélites..." : "Sin datos de alineación."}
+                  </div>
+                )}
+
+                {deepData?.tech_biotech_radar ? (
+                  <TechSingularityPanel data={deepData.tech_biotech_radar} />
+                ) : null}
+              </div>
+
+              {/* RIGHT COL: SYNTHESIS */}
+              <div>
+                <div className="t-label" style={{ marginBottom: '0.5rem' }}>RESUMEN EJECUTIVO</div>
+                <div style={{
+                  fontSize: '0.9rem', lineHeight: 1.6,
+                  height: '300px', overflowY: 'auto',
+                  paddingRight: '0.5rem'
+                }}>
+                  {deepData?.executive_summary || (scanning ? "Esperando enlace de datos..." : "Selecciona una entidad para iniciar análisis profundo.")}
                 </div>
-                <p style={{ fontSize: '0.8rem', lineHeight: 1.4, fontWeight: 500 }}>{a.title}</p>
-                {a.editorial && (
-                  <p style={{
-                    marginTop: '0.3rem',
-                    fontSize: '0.75rem',
-                    fontStyle: 'italic',
-                    color: 'var(--text-muted)',
-                    lineHeight: 1.4
-                  }}>
-                    "{a.editorial}"
-                  </p>
+
+                {deepData?.supply_chain_alert && (
+                  <div style={{ marginTop: '1.5rem', padding: '1rem', border: '1px solid var(--risk-critical)', background: 'rgba(255, 68, 68, 0.05)' }}>
+                    <div className="t-label" style={{ color: 'var(--risk-critical)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <AlertTriangle size={14} /> ALERTA DE SUMINISTRO
+                    </div>
+                    <div style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                      {deepData.supply_chain_alert}
+                    </div>
+                  </div>
                 )}
               </div>
-            ))}
+            </div>
           </div>
+        </div>
+
+        {/* ZONE 4: MICRO-ALERTS (RIGHT) */}
+        <div className="zone-right glass-panel" style={{ height: 'calc(100vh - 180px)', overflowY: 'auto' }}>
+          <div style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="t-label">MICRO-ALERTAS</div>
+          </div>
+          {alerts.map(a => (
+            <div key={a.id} style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '1px 4px', background: 'var(--bg-secondary)', borderRadius: '2px' }}>{a.country_code}</span>
+                <span style={{ fontSize: '0.6rem', opacity: 0.5 }}>{new Date(a.created_at).toLocaleTimeString()}</span>
+              </div>
+              <div style={{ fontSize: '0.8rem', lineHeight: 1.3 }}>{a.title}</div>
+            </div>
+          ))}
         </div>
 
       </div>
@@ -187,54 +219,13 @@ export default function Dashboard() {
   )
 }
 
-/* ===== METRIC CARD ===== */
-function MetricCard({ label, value, color }: { label: string, value: string, color?: 'orange' | 'sage' }) {
-  const cardClass = color === 'orange' ? 'grid-card orange' : color === 'sage' ? 'grid-card sage' : 'grid-card'
+function MetricWidget({ label, value, color }: { label: string, value: string | number, color?: string }) {
   return (
-    <div className={cardClass}>
-      <div style={{
-        fontSize: '0.6rem',
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.1em',
-        opacity: 0.7,
-        marginBottom: '0.5rem'
-      }}>{label}</div>
-      <div className="t-display t-lg">{value}</div>
+    <div>
+      <div className="t-label" style={{ marginBottom: '0.2rem' }}>{label}</div>
+      <div className="t-display" style={{ fontSize: '1.5rem', color: color === 'red' ? 'var(--risk-critical)' : color === 'orange' ? 'var(--risk-high)' : color === 'blue' ? 'var(--accent)' : 'inherit' }}>
+        {value}
+      </div>
     </div>
   )
-}
-
-/* ===== RISK PILL ===== */
-function RiskPill({ level }: { level: string }) {
-  const colorMap: Record<string, string> = {
-    CRITICAL: 'var(--risk-critical)',
-    HIGH: 'var(--risk-high)',
-    MEDIUM: 'var(--risk-medium)',
-    LOW: 'var(--risk-low)',
-  }
-  const color = colorMap[level] || 'var(--text-muted)'
-
-  return (
-    <span style={{
-      fontSize: '0.6rem',
-      fontWeight: 700,
-      fontFamily: 'var(--font-data)',
-      color: color,
-      border: `1px solid ${color}`,
-      padding: '2px 8px',
-      borderRadius: 'var(--radius-xs)',
-      textTransform: 'uppercase',
-      letterSpacing: '0.03em'
-    }}>
-      {level}
-    </span>
-  )
-}
-
-function scoreColor(score: number): string {
-  if (score >= 70) return 'var(--risk-critical)'
-  if (score >= 50) return 'var(--risk-high)'
-  if (score >= 30) return 'var(--risk-medium)'
-  return 'var(--risk-low)'
 }

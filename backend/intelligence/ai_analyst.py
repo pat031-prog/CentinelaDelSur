@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
@@ -6,6 +7,7 @@ import google.generativeai as genai
 from openai import OpenAI
 from backend.utils.config import settings
 from backend.utils.logger import logger
+from backend.config.country_profiles import COUNTRY_VECTORS
 
 # ATALAYA System Prompt - Magazine/Editorial Style
 SYSTEM_PROMPT = """Eres ATALAYA, una plataforma de inteligencia geopolítica especializada en América Latina.
@@ -313,6 +315,97 @@ class GeminiAnalyst(BaseAnalyst):
                 }
             }}
         ]
+
+    async def generate_deep_analysis(
+        self,
+        country_code: str,
+        country_name: str,
+    ) -> Dict[str, Any]:
+        """
+        Perform a Deep Dive Analysis using Country Vectors and Parallel Research.
+        Returns a structured JSON object.
+        """
+        vectors = COUNTRY_VECTORS.get(country_code, COUNTRY_VECTORS.get("ARG")) # Default to ARG format if missing
+        
+        # 1. PARALLEL DEEP RESEARCH
+        futures = []
+        
+        # Thread A: Real Economy & Commodities
+        commodities_query = f"{country_name} statistics exports production: {', '.join(vectors['commodities'])} current status data"
+        futures.append(self.perform_research(commodities_query))
+        
+        # Thread B: Power Dynamics & Risks
+        risks_query = f"{country_name} political crisis institutional stability: {', '.join(vectors['risks'])} recent events"
+        futures.append(self.perform_research(risks_query))
+        
+        # Thread C: Geopolitics & Alignment
+        geo_query = f"{country_name} foreign diplomacy alignment USA China EU Russia: {', '.join(vectors['geopolitics'])}"
+        futures.append(self.perform_research(geo_query))
+        
+        # Thread D: Future Tech & Science
+        tech_query = f"{country_name} science technology startups innovation: {', '.join(vectors['tech'])}"
+        futures.append(self.perform_research(tech_query))
+        
+        # Run all research threads in parallel
+        results = await asyncio.gather(*futures)
+        econ_ctx, risk_ctx, geo_ctx, tech_ctx = results
+        
+        # 2. SYNTHESIS & STRUCTURED OUTPUT
+        prompt = f"""
+        ACT AS: Lead Geopolitical Strategist for ATALAYA.
+        TASK: Produce a 'Deep Context' Intelligence Report for {country_name} ({country_code}).
+        
+        INPUT DATA (Research Threads):
+        [ECONOMY]: {econ_ctx[:2000]}
+        [POLITICS]: {risk_ctx[:2000]}
+        [GEOPOLITICS]: {geo_ctx[:2000]}
+        [TECH/FUTURE]: {tech_ctx[:2000]}
+        
+        OUTPUT FORMAT: STRICT JSON only. No markdown formatting.
+        Schema:
+        {{
+            "executive_summary": "Markdown text. High-level synthesis of the situation. Max 300 words. Editorial tone.",
+            "alignment_score": {{
+                "usa_china_axis": <int -100 (USA) to +100 (China)>,
+                "description": "Brief explanation of the alignment position."
+            }},
+            "key_commodities": [
+                {{ "name": "Commodity Name", "status": "Critical/Stable/Booming", "trend": "Up/Down/Stable", "details": "Specific data point" }}
+            ],
+            "tech_biotech_radar": {{
+                "level": "Latent/Emerging/Advanced",
+                "highlights": ["List of 2-3 key specific projects or startups found in research"]
+            }},
+            "supply_chain_alert": "Single most critical bottleneck or logistics threat found."
+        }}
+        """
+        
+        try:
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.4, # Lower temp for strict JSON
+                    response_mime_type="application/json" # Force JSON mode if available, or just guide model
+                )
+            )
+            text = response.text
+            # Clean possible markdown blocks
+            if "```json" in text:
+                text = text.split("```json")[1].split("```")[0]
+            elif "```" in text:
+                text = text.split("```")[1].split("```")[0]
+            
+            return json.loads(text)
+            
+        except Exception as e:
+            self.logger.error(f"Deep Analysis failed: {e}")
+            return {
+                "executive_summary": "Deep analysis generation failed. System defaulted to basic mode.",
+                "alignment_score": {"usa_china_axis": 0, "description": "Unknown"},
+                "key_commodities": [],
+                "tech_biotech_radar": {"level": "Unknown", "highlights": []},
+                "supply_chain_alert": "System Error"
+            }
 
     async def perform_research(self, query: str) -> str:
         """Método específico para investigar datos duros en tiempo real."""

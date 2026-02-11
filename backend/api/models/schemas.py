@@ -72,6 +72,20 @@ class CountryOverview(CountryResponse):
 
 # --- Risk Score schemas ---
 
+class AnalysisResult(BaseModel):
+    country_code: str
+    report_text: str  # Markdown executive summary
+    # Deep Analysis Fields
+    alignment_score: Optional[Dict[str, Any]] = None  # e.g., {"score": -40, "axis": "USA-China", "reasoning": "..."}
+    key_commodities: Optional[List[Dict[str, Any]]] = None  # e.g., [{"name": "Soy", "status": "Critical", ...}]
+    tech_biotech_radar: Optional[Dict[str, Any]] = None  # e.g., {"level": "Emerging", "highlights": [...]}
+    supply_chain_alert: Optional[str] = None
+    
+    analyzed_at: datetime = Field(default_factory=datetime.utcnow)
+    model_version: Optional[str] = None
+    confidence: Optional[float] = Field(None, ge=0, le=1)
+
+
 class RiskScoreBase(BaseModel):
     country_code: str
     domain: Domain

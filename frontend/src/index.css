@@ -294,6 +294,127 @@ a {
   }
 }
 
+/* ===== ORGANIC WAR ROOM AESTHETICS ===== */
+
+.glass-panel {
+  background: rgba(10, 15, 30, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5), 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.grid-dashboard-organic {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+}
+
+/* Zone 1: Top Bar */
+.zone-top {
+  grid-column: span 12;
+}
+
+/* Zone 2: Navigation/Map (Left) */
+.zone-left {
+  grid-column: span 3;
+}
+
+/* Zone 3: Focus/War Room (Center) */
+.zone-center {
+  grid-column: span 6;
+}
+
+/* Zone 4: Alerts (Right) */
+.zone-right {
+  grid-column: span 3;
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+  }
+}
+
+.pulse-critical {
+  animation: pulse-red 2s infinite;
+}
+
+/* EXPERIMENTAL GLITCH EFFECT */
+@keyframes glitch {
+  0% {
+    transform: translate(0)
+  }
+
+  20% {
+    transform: translate(-2px, 2px)
+  }
+
+  40% {
+    transform: translate(-2px, -2px)
+  }
+
+  60% {
+    transform: translate(2px, 2px)
+  }
+
+  80% {
+    transform: translate(2px, -2px)
+  }
+
+  100% {
+    transform: translate(0)
+  }
+}
+
+.glitch-text {
+  position: relative;
+  display: inline-block;
+}
+
+.glitch-text:hover {
+  animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+  color: var(--risk-critical);
+}
+
+/* CRT Scanline effect overlay */
+.crt-overlay {
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg,
+      rgba(255, 0, 0, 0.06),
+      rgba(0, 255, 0, 0.02),
+      rgba(0, 0, 255, 0.06));
+  background-size: 100% 3px, 6px 100%;
+  pointer-events: none;
+}
+
+.typewriter-line {
+  animation: fadeInTypewriter 0.1s ease-out;
+}
+
+@keyframes fadeInTypewriter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar {
   width: 5px;

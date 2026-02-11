@@ -6,6 +6,7 @@ from backend.modeling.risk_scoring import RiskScorer
 from backend.modeling.scenario_generator import ScenarioGenerator
 from backend.modeling.cascade_simulator import CascadeSimulator
 from backend.intelligence.report_generator import ReportGenerator
+from backend.intelligence.ai_analyst import GeminiAnalyst
 from backend.api.routes.countries import LATAM_COUNTRIES, SAMPLE_SCORES
 import logging
 
@@ -102,6 +103,38 @@ async def generate_deep_analysis(
         log.warning(f"Stage 0.5 Data fetch failed: {e}")
         # Fallback to minimal message to prevent hallucination
         news_context = "DATA FETCH FAILED. DO NOT INVENT DATA. STATE 'Data Unavailable'."
+
+    # ========================================================================
+    # DEEP WAR ROOM ENGINE (New "Deep" Mode)
+    # ========================================================================
+    if request.depth == "deep":
+        try:
+            log.info(f"[DEEP ENGINE] Starting Deep War Room analysis for {country_code}")
+            analyst = GeminiAnalyst()
+            deep_data = await analyst.generate_deep_analysis(country_code, info["name"])
+            
+            # Construct response
+            return {
+                "country_code": country_code,
+                "country_name": info["name"],
+                "analysis_depth": "deep",
+                "timestamp": datetime.utcnow().isoformat(),
+                "risk_assessment": risk, # Keep calculated risk
+                "scenarios": [], # Scenarios might be inferred from deep data if needed later
+                "report_text": deep_data.get("executive_summary", "No summary generated."),
+                "alignment_score": deep_data.get("alignment_score"),
+                "key_commodities": deep_data.get("key_commodities"),
+                "tech_biotech_radar": deep_data.get("tech_biotech_radar"),
+                "supply_chain_alert": deep_data.get("supply_chain_alert"),
+                "sources_used": True,
+                "ai_powered": True,
+            }
+        except Exception as e:
+            import traceback
+            log.error(f"[DEEP ENGINE] Failed: {e}")
+            log.error(traceback.format_exc())
+            # Fallthrouth to standard pipeline if deep engine fails
+            pass
 
     # ========================================================================
     # 4-STAGE ATALAYA PIPELINE: Extraction → Analysis → Quantification → Synthesis
