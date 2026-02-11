@@ -352,31 +352,31 @@ class GeminiAnalyst(BaseAnalyst):
         
         # 2. SYNTHESIS & STRUCTURED OUTPUT
         prompt = f"""
-        ACT AS: Lead Geopolitical Strategist for ATALAYA.
-        TASK: Produce a 'Deep Context' Intelligence Report for {country_name} ({country_code}).
+        ACTÚA COMO: Estratega Geopolítico Principal de ATALAYA.
+        TAREA: Producir un Informe de Inteligencia de 'Contexto Profundo' para {country_name} ({country_code}).
         
-        INPUT DATA (Research Threads):
-        [ECONOMY]: {econ_ctx[:2000]}
-        [POLITICS]: {risk_ctx[:2000]}
-        [GEOPOLITICS]: {geo_ctx[:2000]}
-        [TECH/FUTURE]: {tech_ctx[:2000]}
+        DATOS DE ENTRADA (Hilos de Investigación):
+        [ECONOMÍA]: {econ_ctx[:2000]}
+        [POLÍTICA]: {risk_ctx[:2000]}
+        [GEOPOLÍTICA]: {geo_ctx[:2000]}
+        [TEC/FUTURO]: {tech_ctx[:2000]}
         
-        OUTPUT FORMAT: STRICT JSON only. No markdown formatting.
-        Schema:
+        FORMATO DE SALIDA: SOLO JSON ESTRICTO. Sin formato markdown.
+        Esquema:
         {{
-            "executive_summary": "Markdown text. High-level synthesis of the situation. Max 300 words. Editorial tone.",
+            "executive_summary": "Texto en Markdown. Síntesis de alto nivel de la situación. Máximo 300 palabras. Tono editorial, en ESPAÑOL.",
             "alignment_score": {{
-                "usa_china_axis": <int -100 (USA) to +100 (China)>,
-                "description": "Brief explanation of the alignment position."
+                "usa_china_axis": <int -100 (USA) a +100 (China)>,
+                "description": "Breve explicación de la posición de alineación en ESPAÑOL."
             }},
             "key_commodities": [
-                {{ "name": "Commodity Name", "status": "Critical/Stable/Booming", "trend": "Up/Down/Stable", "details": "Specific data point" }}
+                {{ "name": "Nombre del Recurso", "status": "Crítico/Estable/En Auge", "trend": "Sube/Baja/Estable", "details": "Dato específico en ESPAÑOL" }}
             ],
             "tech_biotech_radar": {{
-                "level": "Latent/Emerging/Advanced",
-                "highlights": ["List of 2-3 key specific projects or startups found in research"]
+                "level": "Latente/Emergente/Avanzado",
+                "highlights": ["Lista de 2-3 proyectos o startups clave encontrados en la investigación (en ESPAÑOL)"]
             }},
-            "supply_chain_alert": "Single most critical bottleneck or logistics threat found."
+            "supply_chain_alert": "La amenaza logística o cuello de botella más crítico encontrado (en ESPAÑOL)."
         }}
         """
         
@@ -410,21 +410,24 @@ class GeminiAnalyst(BaseAnalyst):
     async def perform_research(self, query: str) -> str:
         """Método específico para investigar datos duros en tiempo real."""
         research_prompt = f"""
-        Objetivo: Encontrar datos EXACTOS y RECIENTES para: {query}
+        OBJETIVO: Encontrar datos EXACTOS y RECIENTES sobre: {query}
         
-        Instrucciones:
-        1. Busca fuentes oficiales y medios financieros confiables.
-        2. Extrae cifras exactas (fechas, porcentajes, montos).
-        3. Si hay datos contradictorios, cita ambos.
+        INSTRUCCIONES:
+        1. Utiliza Google Search para encontrar fuentes oficiales (FMI, Bancos Centrales, Reuters, Bloomberg).
+        2. Prioriza datos de las últimas 4 semanas.
+        3. Extrae cifras exactas: fechas, porcentajes, montos en USD, nombres de empresas.
+        4. Si no encuentras datos exactos, indica explicitamente "Sin datos recientes confiables".
         
-        Formato de salida: Resumen factual con citas.
+        FORMATO DE SALIDA:
+        - Resumen factual en Español.
+        - Cita las fuentes entre paréntesis.
         """
         
         try:
-            # Usamos temperatura 0.3 para precisión
+            # Usamos temperatura baja para precisión y activamos TOOLS
             response = self.model.generate_content(
                 research_prompt,
-                tools=self.tools,
+                tools=self.tools, # <--- CRITICAL: Use the search tool
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.3
                 )

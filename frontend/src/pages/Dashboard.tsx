@@ -109,21 +109,28 @@ export default function Dashboard() {
               style={{
                 padding: '0.75rem 1rem',
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
-                background: selectedCode === c.code ? 'rgba(0, 170, 255, 0.1)' : 'transparent',
+                background: selectedCode === c.code ? 'rgba(0, 170, 255, 0.15)' : 'rgba(255, 255, 255, 0.02)',
                 borderLeft: selectedCode === c.code ? '3px solid var(--accent)' : '3px solid transparent',
                 cursor: 'pointer',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s ease-in-out',
+                boxShadow: selectedCode === c.code ? '0 0 15px rgba(0, 170, 255, 0.2)' : 'none'
               }}
               className="hover-bg"
             >
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{c.name}</div>
-                <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>{c.code}</div>
+                <div style={{
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  color: selectedCode === c.code ? '#fff' : 'var(--text-primary)',
+                  textShadow: selectedCode === c.code ? '0 0 8px rgba(255,255,255,0.5)' : 'none'
+                }}>{c.name}</div>
+                <div style={{ fontSize: '0.7rem', opacity: 0.6, letterSpacing: '0.05em' }}>{c.code}</div>
               </div>
               <div style={{
                 fontWeight: 700,
-                color: c.current_risk_score >= 70 ? 'var(--risk-critical)' : 'var(--text-secondary)'
+                color: c.current_risk_score >= 70 ? 'var(--risk-critical)' : 'var(--text-secondary)',
+                textShadow: c.current_risk_score >= 70 ? '0 0 10px red' : 'none'
               }}>
                 {c.current_risk_score.toFixed(0)}
               </div>
