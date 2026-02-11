@@ -245,10 +245,14 @@ function FXWidget({ rates, loading }: { rates: any[]; loading: boolean }) {
             <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{r.pair}</span>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
               <span className="t-data" style={{ fontSize: '0.95rem', fontWeight: 700 }}>
-                {r.rate >= 100 ? r.rate.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : r.rate.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 4 })}
+                {typeof r.rate === 'number'
+                  ? (r.rate >= 100
+                    ? r.rate.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+                    : r.rate.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 4 }))
+                  : 'N/A'}
               </span>
-              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: r.change >= 0 ? '#1a5c1a' : '#8b1a1a' }}>
-                {r.change >= 0 ? '+' : ''}{r.change.toFixed(2)}%
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: (r.change || 0) >= 0 ? '#1a5c1a' : '#8b1a1a' }}>
+                {(r.change || 0) >= 0 ? '+' : ''}{(r.change || 0).toFixed(2)}%
               </span>
             </div>
           </div>
@@ -280,10 +284,17 @@ function CommoditiesWidget({ commodities, loading }: { commodities: any[]; loadi
             </div>
             <div style={{ textAlign: 'right' }}>
               <span className="t-data" style={{ fontSize: '0.95rem', fontWeight: 700 }}>
-                {c.value >= 100 ? c.value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : c.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {(() => {
+                  const val = c.price ?? c.value
+                  return typeof val === 'number'
+                    ? (val >= 100
+                      ? val.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+                      : val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+                    : 'N/A'
+                })()}
               </span>
-              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: c.change >= 0 ? 'var(--risk-low)' : 'var(--risk-critical)' }}>
-                {c.change >= 0 ? '▲' : '▼'} {Math.abs(c.change).toFixed(2)}%
+              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: (c.change || 0) >= 0 ? 'var(--risk-low)' : 'var(--risk-critical)' }}>
+                {(c.change || 0) >= 0 ? '▲' : '▼'} {Math.abs(c.change || 0).toFixed(2)}%
               </div>
             </div>
           </div>
