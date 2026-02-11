@@ -24,69 +24,56 @@ export default function CountryCard({ code, name, region, riskScore, riskLevel, 
 
   return (
     <Link to={`/country/${code}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-      <div className="bento-card" style={{
+      <div className="card" style={{
         height: '100%',
-        position: 'relative',
-        overflow: 'hidden',
-        borderLeft: `4px solid ${color}`,
-        padding: '1.25rem',
-        justifyContent: 'space-between'
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        borderLeft: `6px solid ${color}`, // Thicker archival marker
+        padding: '1.25rem'
       }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+        {/* Header Ficha */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
           <div>
-            <div style={{
-              fontFamily: 'JetBrains Mono',
-              fontSize: '0.75rem',
-              color: 'var(--text-secondary)',
-              marginBottom: '0.25rem',
-              fontWeight: 600
-            }}>
+            <span className="label-archive" style={{ background: 'black', color: 'white', padding: '2px 6px', display: 'inline-block' }}>
               {code}
-            </div>
+            </span>
             <h3 style={{
-              color: 'var(--text-primary)',
-              margin: 0,
-              fontSize: '1.1rem',
-              fontWeight: 700,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.2
+              marginTop: '0.75rem',
+              fontSize: '1.25rem',
+              lineHeight: 1.1,
+              marginBottom: '0.25rem'
             }}>
               {name}
             </h3>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              {region}
+            </span>
           </div>
-          <AlertBadge level={riskLevel} size="sm" showLabel={false} pulsing={false} />
+
+          {/* Score Serif Giant */}
+          <div style={{ textAlign: 'right' }}>
+            <span style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: '2.5rem',
+              fontWeight: 700,
+              lineHeight: 1,
+              color: 'var(--text-primary)'
+            }}>
+              {riskScore.toFixed(0)}
+            </span>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>
+              INDICE
+            </div>
+          </div>
         </div>
 
-        {/* Risk Score */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: 'auto' }}>
-          <span style={{
-            color: 'var(--text-primary)',
-            fontWeight: 800,
-            fontSize: '2rem',
-            fontFamily: 'JetBrains Mono',
-            lineHeight: 1
-          }}>
-            {riskScore.toFixed(0)}
-          </span>
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'JetBrains Mono' }}>/100</span>
-        </div>
-
-        {/* Sparkline Decor (Simplified) */}
-        <div style={{
-          height: '4px',
-          width: '100%',
-          background: '#f1f5f9',
-          marginTop: '0.75rem',
-          borderRadius: '2px',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            width: `${riskScore}%`,
-            height: '100%',
-            background: color,
-            transition: 'width 1s ease-out'
-          }} />
+        {/* Footer / Status */}
+        <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-light)', paddingTop: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>ESTADO:</span>
+            <AlertBadge level={riskLevel} size="sm" />
+          </div>
         </div>
       </div>
     </Link>

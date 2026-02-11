@@ -33,21 +33,41 @@ export default function DomainChart({ data }: Props) {
   useEffect(() => { setTimeout(() => setShow(true), 60) }, [])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--border)' }}>
       {data.map((d, i) => {
         const color = COLORS[d.level] || 'var(--text-muted)'
         const w = show ? Math.min(100, d.score) : 0
         return (
-          <div key={d.domain}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: '0.85rem' }}>
-              <span style={{ fontWeight: 600 }}>{NAMES[d.domain] || d.domain}</span>
-              <span style={{ fontWeight: 700, color }}>{d.score.toFixed(1)}</span>
+          <div key={d.domain} style={{
+            padding: '0.75rem 0',
+            borderBottom: '1px solid var(--border-light)',
+            display: 'grid',
+            gridTemplateColumns: '1fr 60px',
+            gap: '1rem',
+            alignItems: 'center'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>{NAMES[d.domain] || d.domain}</span>
+              </div>
+              <div style={{ height: '8px', width: '100%', background: 'rgba(0,0,0,0.05)', position: 'relative' }}>
+                <div style={{
+                  position: 'absolute',
+                  left: 0, top: 0, bottom: 0,
+                  width: `${w}%`,
+                  background: color,
+                  transition: `width 0.5s ease-out ${i * 50}ms`
+                }} />
+              </div>
             </div>
-            <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
-              <div style={{
-                width: `${w}%`, height: '100%', background: color, borderRadius: 3,
-                transition: `width 0.7s cubic-bezier(0.4,0,0.2,1) ${i * 80}ms`,
-              }} />
+            <div style={{
+              textAlign: 'right',
+              fontFamily: 'var(--font-serif)',
+              fontWeight: 700,
+              fontSize: '1.1rem',
+              color: color
+            }}>
+              {d.score.toFixed(0)}
             </div>
           </div>
         )

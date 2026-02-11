@@ -293,7 +293,7 @@ Mínimo 1500 palabras. Prosa editorial, no listas."""
 
 
 class GeminiAnalyst(BaseAnalyst):
-    """Google Gemini implementation with retry for 429 rate limits."""
+    """Google Gemini implementation with Google Search Grounding & JSON Mode."""
     
     def __init__(self):
         super().__init__()
@@ -301,37 +301,88 @@ class GeminiAnalyst(BaseAnalyst):
             raise ValueError("GEMINI_API_KEY not configured")
         
         genai.configure(api_key=settings.gemini_api_key)
-        # Use best available model: gemini-2.5-flash (GA, best price-performance)
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
-        self.provider_name = "Gemini 2.5 Flash"
+        
+        # Configure Google Search Tool
+        self.tools = [
+            {"google_search_retrieval": {
+                "dynamic_retrieval_config": {
+                    "mode": "dynamic",
+                    "dynamic_threshold": 0.6
+                }
+            }}
+        ]
+        
+        # Use best available model: gemini-2.5-flash
+        self.model = genai.GenerativeModel('gemini-2.5-flash', tools=self.tools)
+        self.json_model = genai.GenerativeModel('gemini-2.5-flash') # No tools for JSON tasks to avoid conflicts
+        self.provider_name = "Gemini 2.5 Flash (Grounded)"
 
     async def generate_content(self, system_prompt: str, user_prompt: str, max_tokens: int = 12000) -> str:
-        import asyncio
-        full_prompt = f"{system_prompt}\n\n{user_prompt}"
+        # Default generation (uses Search if dynamic threshold is met)
+        return await self._generate(self.model, system_prompt, user_prompt, max_tokens, temperature=0.3)
+
+    async def research_topic(self, query: str, search_modifiers: str = "") -> str:
+        """
+        Conduct grounded research using Google Search.
+        Low temperature for factual accuracy.
+        """
+        system_prompt = "You are a research librarian. Gather factual information from credible sources."
+        user_prompt = f"""RESEARCH QUERY: {query}
         
-        # Retry logic for 429 (rate limit) errors
+        CONTEXT MODIFIERS: {search_modifiers}
+        
+        TASK:
+        1. Search for the most relevant, up-to-date information from the specified sources.
+        2. Provide a detailed summary of facts, numbers, dates, and direct quotes.
+        3. MANDATORY: Cite authoritative URLs for every key fact.
+        4. Focus on official statements, economic data, and major political events.
+        """
+        
+        # Force low temp for facts
+        return await self._generate(self.model, system_prompt, user_prompt, max_tokens=8000, temperature=0.1)
+
+    async def identify_tipping_points(self, country_code: str, country_name: str, current_state: Dict[str, Any]) -> List[Dict[str, Any]]:
+        # Use JSON mode model
+        prompt = f"""Analiza el estado actual de {country_name} ({country_code}) e identifica los 3-5 PUNTOS DE INFLEXIÓN más críticos.
+        Estado actual: {json.dumps(current_state, indent=2, default=str)}
+        
+        Return a JSON array of objects with keys: event, probability, impact_if_occurs, impact_if_not, key_date, domain, actors, cascade_risk."""
+        
+        try:
+            response = await self._generate(
+                self.json_model, 
+                SYSTEM_PROMPT, 
+                prompt, 
+                max_tokens=4000, 
+                temperature=0.4,
+                mime_type="application/json"
+            )
+            return json.loads(response)
+        except Exception as e:
+            self.logger.error(f"JSON parsing/generation failed: {e}")
+            return []
+
+    async def _generate(self, model, system, user, max_tokens, temperature, mime_type=None):
+        import asyncio
+        full_prompt = f"{system}\n\n{user}"
         max_retries = 3
+        
+        generation_config = genai.types.GenerationConfig(
+            temperature=temperature,
+            max_output_tokens=max_tokens,
+            response_mime_type=mime_type
+        )
+
         for attempt in range(max_retries + 1):
             try:
-                response = self.model.generate_content(
-                    full_prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        temperature=0.7,
-                        max_output_tokens=max_tokens,
-                    )
-                )
+                response = model.generate_content(full_prompt, generation_config=generation_config)
                 return response.text
             except Exception as e:
                 error_str = str(e)
-                is_rate_limit = "429" in error_str or "ResourceExhausted" in error_str or "quota" in error_str.lower()
-                
-                if is_rate_limit and attempt < max_retries:
-                    wait_time = 2 ** (attempt + 1)  # 2s, 4s, 8s
-                    self.logger.warning(f"Gemini rate limited (attempt {attempt + 1}/{max_retries}), waiting {wait_time}s...")
+                if ("429" in error_str or "ResourceExhausted" in error_str) and attempt < max_retries:
+                    wait_time = 2 ** (attempt + 1)
                     await asyncio.sleep(wait_time)
                     continue
-                
-                self.logger.error(f"Gemini API error: {error_str}")
                 raise
 
 

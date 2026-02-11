@@ -26,25 +26,32 @@ interface Props {
 
 export default function AlertBadge({ level, size = 'md', showLabel = true }: Props) {
   const color = COLORS[level] || 'var(--text-muted)'
-  const dotSize = size === 'sm' ? 6 : size === 'lg' ? 10 : 8
-  const fontSize = size === 'sm' ? '0.7rem' : size === 'lg' ? '0.85rem' : '0.75rem'
-  const pad = size === 'sm' ? '2px 8px' : size === 'lg' ? '5px 14px' : '3px 10px'
 
   return (
-    <span className="pill" style={{
-      borderColor: color,
-      padding: pad,
-      gap: '5px',
+    <div style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      padding: size === 'sm' ? '2px 8px' : '4px 12px',
+      border: `1px solid ${color}`,
+      background: 'transparent',
+      color: color,
+      fontFamily: 'var(--font-mono)',
+      fontSize: size === 'sm' ? '0.65rem' : '0.75rem',
+      fontWeight: 700,
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      borderRadius: 0 // Explicit square
     }}>
-      <span style={{
-        width: dotSize, height: dotSize, borderRadius: '50%',
-        background: color, display: 'inline-block', flexShrink: 0,
+      <div style={{
+        width: size === 'sm' ? 6 : 8,
+        height: size === 'sm' ? 6 : 8,
+        background: color,
+        borderRadius: 0 // Square dot
       }} />
       {showLabel && (
-        <span style={{ fontSize, fontWeight: 600, color: 'var(--text-primary)' }}>
-          {LABELS[level]}
-        </span>
+        <span>{LABELS[level]}</span>
       )}
-    </span>
+    </div>
   )
 }

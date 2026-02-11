@@ -239,24 +239,59 @@ async def run_pipeline(
     log.info(f"{'='*60}")
 
     # ------------------------------------------------------------------
-    # STAGE 1: EXTRACTION
+    # STAGE 1: RESEARCH & EXTRACTION (The Librarian)
     # ------------------------------------------------------------------
-    extraction_prompt = PROMPT_EXTRACTION_USER.format(
-        country_name=country_name,
-        country_code=country_code,
-        date=date_str,
-        news_context=news_context or "Sin noticias recientes disponibles. Usa tu conocimiento general actualizado.",
-        domain_scores_text=domain_scores_text,
-    )
+    from backend.config.sources import get_search_query_modifiers
+    from backend.intelligence.ai_analyst import GeminiAnalyst
+    
+    extraction_prompt = "" 
+    extracted_data = ""
+    ext_provider = "Unknown"
+
     try:
-        extracted_data, ext_provider = await _call_stage(
-            "extraction", PROMPT_EXTRACTION_SYSTEM, extraction_prompt
-        )
+        # Research Phase using Gemini (Librarian)
+        search_modifiers = get_search_query_modifiers(country_code)
+        log.info(f"[EXTRACTION] Starting Research Phase with modifiers: {search_modifiers}")
+        
+        # Instantiate Librarian
+        librarian = GeminiAnalyst()
+        research_query = f"Latest official political and economic events in {country_name} ({country_code}) {date_str}. Key risk indicators, government decrees, central bank decisions."
+        
+        extracted_data = await librarian.research_topic(research_query, search_modifiers)
+        ext_provider = "Gemini 2.5 Flash (Research)"
         stages_log.append({"stage": "extraction", "status": "ok", "provider": ext_provider, "chars": len(extracted_data)})
+        
     except Exception as e:
-        extracted_data = f"Extracción falló: {e}. Usando scores base del sistema."
-        stages_log.append({"stage": "extraction", "status": "failed", "error": str(e)[:200]})
-        log.warning(f"[EXTRACTION] Failed, continuing with base data")
+        log.warning(f"[EXTRACTION] Research mode failed: {e}. Falling back to standard generation.")
+        
+        # Fallback: Standard Prompt Extraction
+        extraction_prompt = PROMPT_EXTRACTION_USER.format(
+            country_name=country_name,
+            country_code=country_code,
+            date=date_str,
+            news_context=news_context or "Sin noticias recientes disponibles. Usa tu conocimiento general actualizado.",
+            domain_scores_text=domain_scores_text,
+        )
+    
+    if not extracted_data:
+        try:
+            if not extraction_prompt: # Should have been set in except block above, but double check
+                 extraction_prompt = PROMPT_EXTRACTION_USER.format(
+                    country_name=country_name,
+                    country_code=country_code,
+                    date=date_str,
+                    news_context=news_context or "Sin noticias recientes disponibles. Usa tu conocimiento general actualizado.",
+                    domain_scores_text=domain_scores_text,
+                )
+            log.info(f"[EXTRACTION] Running Standard Extraction (Fallback)")
+            extracted_data, ext_provider = await _call_stage(
+                "extraction", PROMPT_EXTRACTION_SYSTEM, extraction_prompt
+            )
+            stages_log.append({"stage": "extraction", "status": "ok", "provider": ext_provider, "chars": len(extracted_data)})
+        except Exception as e:
+            extracted_data = f"Extracción falló: {e}. Usando scores base del sistema."
+            stages_log.append({"stage": "extraction", "status": "failed", "error": str(e)[:200]})
+            log.warning(f"[EXTRACTION] Failed, continuing with base data")
 
     # ------------------------------------------------------------------
     # STAGE 2: STRUCTURAL ANALYSIS

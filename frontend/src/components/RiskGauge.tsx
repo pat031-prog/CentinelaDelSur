@@ -17,42 +17,48 @@ const COLORS: Record<AlertLevel, string> = {
 }
 
 export default function RiskGauge({ score, level, label, size = 140 }: Props) {
-  const [progress, setProgress] = useState(0)
-  const color = COLORS[level] || 'var(--text-muted)'
-  const radius = size * 0.38
-  const stroke = size * 0.075
-  const circ = 2 * Math.PI * radius
+  const [current, setCurrent] = useState(0)
 
   useEffect(() => {
-    const t = setTimeout(() => setProgress(score), 80)
+    const t = setTimeout(() => setCurrent(score), 100)
     return () => clearTimeout(t)
   }, [score])
 
-  const offset = circ - (progress / 100) * circ
+  const color = COLORS[level] || 'var(--text-muted)'
 
   return (
-    <div style={{ textAlign: 'center' }}>
-      {label && <div className="label" style={{ marginBottom: '0.5rem' }}>{label}</div>}
-      <div style={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--border)" strokeWidth={stroke} />
-          <circle
-            cx={size / 2} cy={size / 2} r={radius} fill="none"
-            stroke={color} strokeWidth={stroke}
-            strokeDasharray={circ} strokeDashoffset={offset}
-            strokeLinecap="round"
-            style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}
-          />
-        </svg>
-        <div style={{
-          position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-        }}>
-          <div className="stat-number" style={{ fontSize: size * 0.25, color: 'var(--text-primary)' }}>
-            {Math.round(progress)}
-          </div>
+    <div style={{ textAlign: 'center', border: '1px solid var(--border)', padding: '1.5rem', background: 'var(--bg-card)' }}>
+      {label && (
+        <div className="label-archive" style={{ marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
+          {label}
         </div>
+      )}
+
+      <div style={{
+        fontFamily: 'var(--font-serif)',
+        fontSize: '4rem',
+        fontWeight: 700,
+        lineHeight: 0.9,
+        color: 'var(--text-primary)',
+        marginTop: '0.5rem'
+      }}>
+        {Math.round(current)}
+      </div>
+
+      <div style={{
+        marginTop: '0.5rem',
+        height: '4px',
+        width: '100%',
+        background: 'var(--border-light)',
+        position: 'relative'
+      }}>
+        <div style={{
+          position: 'absolute',
+          left: 0, top: 0, bottom: 0,
+          width: `${current}%`,
+          background: color,
+          transition: 'width 1s ease-out'
+        }} />
       </div>
     </div>
   )

@@ -1,274 +1,176 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
-  /* ===== WARM DOSSIER PALETTE ===== */
-  /* Main backgrounds - warm cream like the reference images */
-  --bg-page: #EDE8DE;
-  --bg-sidebar: #1a1a1a;
-  --bg-card: #ffffff;
+  /* ===== EXTREME ARCHIVAL PALETTE ===== */
+  --bg-page: #F2EFE9;
+  /* Warmer, like aged paper */
+  --bg-sidebar: #050505;
+  /* Void Black */
+  --bg-card: #FFFFFF;
+  /* Stark White */
 
-  /* Colored card backgrounds (from Intelly reference) */
-  --card-sage: #C8D5A0;
-  /* Olive/Sage green */
-  --card-salmon: #E8B4A6;
-  /* Warm salmon/pink */
-  --card-cream: #F5E6C8;
-  /* Warm cream/gold */
-  --card-blush: #F2D1D1;
-  /* Light blush */
-  --card-lavender: #D8D0E8;
-  /* Light lavender for critical */
+  /* INK */
+  --text-primary: #000000;
+  --text-secondary: #444444;
+  --text-muted: #888888;
+  --text-inverse: #FFFFFF;
 
-  /* Borders */
-  --border: #D6D0C4;
-  /* Warm grey border */
-  --border-strong: #1a1a1a;
-  /* Black for emphasis */
+  /* BORDERS are everything in Brutalism */
+  --border-width: 1px;
+  --border-color: #000000;
+  --border-light: rgba(0, 0, 0, 0.2);
 
-  /* Text */
-  --text-primary: #1a1a1a;
-  --text-secondary: #6B6560;
-  --text-muted: #9C9690;
-  --text-on-dark: #F5F0E8;
+  /* GRID SYSTEM */
+  --grid-gap: 0px;
+  /* Collapsed borders */
 
-  /* Accents - BLACK is the primary accent, not blue */
-  --accent: #1a1a1a;
-  --accent-hover: #333333;
+  /* RISK COLORS (High Contrast) */
+  --risk-critical: #FF0000;
+  /* Pure RGB Red */
+  --risk-high: #FF4D00;
+  --risk-medium: #FFD700;
+  --risk-low: #008000;
 
-  /* Risk semantic colors */
-  --risk-green: #4A7C59;
-  --risk-yellow: #B8860B;
-  --risk-orange: #C4652A;
-  --risk-red: #B91C1C;
-  --risk-black: #6B21A8;
+  /* Dimensions */
+  --sidebar-width: 280px;
+  --header-height: 80px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-
-  /* Layout */
-  --sidebar-w: 240px;
-  --radius: 14px;
+  /* Typography */
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
-/* ===== RESET & BASE ===== */
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
+/* ===== BRUTALIST RESET ===== */
+* {
   box-sizing: border-box;
 }
 
-html {
-  font-size: 16px;
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-body {
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg-page);
-  color: var(--text-primary);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+button {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  border: none;
+  background: none;
 }
 
 a {
-  color: inherit;
   text-decoration: none;
+  color: inherit;
 }
 
-/* ===== TYPOGRAPHY ===== */
-h1 {
-  font-size: 2rem;
+/* ===== UTILITY CLASSES ===== */
+
+/* The Grid Container */
+.brutalist-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: var(--border-width) solid var(--border-color);
+  border-left: var(--border-width) solid var(--border-color);
+}
+
+/* The Grid Cell */
+.grid-cell {
+  border-right: var(--border-width) solid var(--border-color);
+  border-bottom: var(--border-width) solid var(--border-color);
+  padding: 1.5rem;
+  background: var(--bg-page);
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.grid-cell:hover {
+  background: #FFFFFF;
+}
+
+.grid-cell.double-width {
+  grid-column: span 2;
+}
+
+.grid-cell.full-width {
+  grid-column: span 4;
+}
+
+/* Typography */
+.type-display {
+  font-family: var(--font-display);
   font-weight: 700;
+  /* Bold */
+  line-height: 0.95;
   letter-spacing: -0.03em;
-  line-height: 1.1;
 }
 
-h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+.type-mono {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+.text-xl {
+  font-size: 3.5rem;
 }
 
-/* ===== CARD SYSTEM ===== */
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+.text-lg {
+  font-size: 2rem;
 }
 
-.card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-md);
+.text-md {
+  font-size: 1.25rem;
 }
 
-.card--sage {
-  background: var(--card-sage);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-.card--salmon {
-  background: var(--card-salmon);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-.card--cream {
-  background: var(--card-cream);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-.card--blush {
-  background: var(--card-blush);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-.card--lavender {
-  background: var(--card-lavender);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-/* ===== PILL / TAG ===== */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 100px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  background: var(--bg-card);
-}
-
-/* ===== BUTTON ===== */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 100px;
+.text-sm {
   font-size: 0.875rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
 }
 
-.btn--primary {
-  background: var(--accent);
-  color: white;
+.text-xs {
+  font-size: 0.75rem;
 }
 
-.btn--primary:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+/* Interactive Elements */
+.btn-brutalist {
+  border: var(--border-width) solid var(--border-color);
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  background: transparent;
 }
 
-.btn--outline {
+.btn-brutalist:hover {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+}
+
+.btn-brutalist.black {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+}
+
+.btn-brutalist.black:hover {
   background: transparent;
   color: var(--text-primary);
-  border: 1.5px solid var(--border-strong);
 }
 
-.btn--outline:hover {
-  background: var(--accent);
-  color: white;
-}
-
-/* ===== LABEL ===== */
-.label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
-
-/* ===== STAT NUMBER ===== */
-.stat-number {
-  font-size: 2.5rem;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.03em;
-}
-
-/* ===== ANIMATIONS ===== */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.35s ease-out forwards;
-}
-
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.4;
-  }
-}
-
-/* ===== SCROLLBAR ===== */
+/* Scrollbar (Minimalist) */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-page);
+  border-left: 1px solid var(--border-color);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 1200px) {
-  :root {
-    --sidebar-w: 200px;
-  }
-}
-
-@media (max-width: 768px) {
-  :root {
-    --sidebar-w: 0px;
-  }
-
-  .sidebar {
-    display: none !important;
-  }
-
-  .main-content {
-    margin-left: 0 !important;
-  }
+  background: var(--text-primary);
 }
