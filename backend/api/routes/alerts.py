@@ -19,10 +19,17 @@ async def get_active_alerts(
     country_code: Optional[str] = None,
     level: Optional[str] = None,
     domain: Optional[str] = None,
+    refresh_news: bool = False,
 ):
     """Get active alerts with optional filters."""
     if country_code:
         country_code = country_code.upper()
+
+        if refresh_news:
+             # Trigger async news fetch (fire and forget or await?)
+             # Since this is a fast endpoint, better to await if user asked for it, or use background task.
+             # However, Search takes 3-5s. Let's await for now to ensure data is there.
+             await alert_system.fetch_real_news_alerts(country_code)
 
     alerts = alert_system.get_active_alerts(
         country_code=country_code,

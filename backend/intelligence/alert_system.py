@@ -113,7 +113,7 @@ class AlertSystem:
             new_alerts.append(self._create_alert(
                 country_code=country_code,
                 level=level,
-                domain=None,
+                domain="crisis",
                 title=f"Alta probabilidad de crisis a 30 días — {country_name}",
                 description=f"Probabilidad de crisis estimada en {crisis_probability_30d*100:.0f}% para los próximos 30 días",
                 editorial=f"Los modelos predictivos de ATALAYA asignan una probabilidad del "
@@ -124,6 +124,39 @@ class AlertSystem:
 
         self.active_alerts.extend(new_alerts)
         return new_alerts
+
+    async def fetch_real_news_alerts(self, country_code: str) -> List[Dict[str, Any]]:
+        """Fetch real-time news alerts using Gemini Search."""
+        from backend.intelligence.ai_analyst import get_analyst
+        
+        try:
+            analyst = get_analyst()
+            country_name = COUNTRY_NAMES.get(country_code, country_code)
+            
+            # Perform search via analyst if capable
+            if hasattr(analyst, "perform_research"):
+                query = f"Noticias urgentes {country_name} crisis política económica protestas hoy"
+                research_summary = await analyst.perform_research(query)
+                
+                # Create a generic 'News' alert with the summary
+                # Note: In a real system, we might want to parse this better or create multiple alerts.
+                alert = self._create_alert(
+                    country_code=country_code,
+                    level="blue", # Info/News level
+                    domain="news",
+                    title=f"Reporte de Inteligencia en Tiempo Real — {country_name}",
+                    description="Resumen de noticias urgentes detectadas por IA.",
+                    editorial=research_summary[:800] + "...", # Truncate for display
+                    source_url=self._build_source_url(country_name, "news")
+                )
+                self.active_alerts.append(alert)
+                return [alert]
+            else:
+                self.logger.warning(f"Analyst {analyst.provider_name} does not support research.")
+        except Exception as e:
+            self.logger.error(f"Failed to fetch real news for {country_code}: {e}")
+            
+        return []
 
     def get_active_alerts(
         self,
